@@ -16,9 +16,9 @@ if SECRET_KEY in [None, "None"] or REFRESH_TOKEN_SECRET_KEY in [None, "None"]:
 else:
     print("Keys loaded")
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2
-REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "2"))
+REFRESH_TOKEN_EXPIRE_MINUTES = int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 days default
 
 async def create_access_token(data: dict):
     to_encode = data.copy()

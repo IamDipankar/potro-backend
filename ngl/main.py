@@ -25,5 +25,3 @@ async def health_check():
 app.include_router(router.sending.router)
 app.include_router(router.authentication.router)
 app.include_router(router.receiving.router)
-
-
