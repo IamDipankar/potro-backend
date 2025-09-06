@@ -14,7 +14,12 @@ async def lifespan(app: FastAPI):
     # Shutdown: (optional) cleanup
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/SobaiBolo-docs',      # Disable Swagger UI (/docs)
+    redoc_url="/SobaiBolo-redoc",     # Disable ReDoc (/redoc)
+    openapi_url="/SobaiBolo-openapi.json"    # Disable OpenAPI schema (/openapi.json)
+)
 
 
 @app.get("/", tags=["root"], response_model=schema.CommunicationMessage)
@@ -24,4 +29,5 @@ async def health_check():
 
 app.include_router(router.sending.router)
 app.include_router(router.authentication.router)
+
 app.include_router(router.receiving.router)
