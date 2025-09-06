@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    docs_url="/SobaiBolo-docs',      # Disable Swagger UI (/docs)
+    docs_url="/SobaiBolo-docs",      # Disable Swagger UI (/docs)
     redoc_url="/SobaiBolo-redoc",     # Disable ReDoc (/redoc)
     openapi_url="/SobaiBolo-openapi.json"    # Disable OpenAPI schema (/openapi.json)
 )
@@ -31,3 +31,4 @@ app.include_router(router.sending.router)
 app.include_router(router.authentication.router)
 
 app.include_router(router.receiving.router)
+
