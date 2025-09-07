@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import *
 from . import router, schema
@@ -19,6 +20,24 @@ app = FastAPI(
     docs_url="/SobaiBolo-docs",      # Disable Swagger UI (/docs)
     redoc_url="/SobaiBolo-redoc",     # Disable ReDoc (/redoc)
     openapi_url="/SobaiBolo-openapi.json"    # Disable OpenAPI schema (/openapi.json)
+)
+
+# CORS settings
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5500",
+    "https://your-frontend-domain.com",
+    "https://potro-backend-1.onrender.com",
+    "null",  # DEV ONLY: lets file:// work; remove for production
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,   # or use allow_origin_regex=r"https?://.*\.yourdomain\.com$"
+    allow_credentials=True,          # only if you use cookies/auth
+    allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+    allow_headers=["*"],
 )
 
 
