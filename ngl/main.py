@@ -24,19 +24,15 @@ app = FastAPI(
 
 # CORS settings
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5500",
-    "https://your-frontend-domain.com",
-    "https://potro-backend-1.onrender.com",
-    "null",  # DEV ONLY: lets file:// work; remove for production
+    # "https://potro-backend-1.onrender.com",
+    "*" ### !!! Danger: recheck before production
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,   # or use allow_origin_regex=r"https?://.*\.yourdomain\.com$"
     allow_credentials=True,          # only if you use cookies/auth
-    allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+    allow_methods=["GET","POST"],
     allow_headers=["*"],
 )
 
