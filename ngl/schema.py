@@ -19,7 +19,7 @@ class MessageTimeOnly(BaseModel):
 
 class Inbox(BaseModel):
     id: str
-    message: List[MessageTimeOnly]
+    messages: List[MessageTimeOnly]
 
 
 class Signup(BaseModel):

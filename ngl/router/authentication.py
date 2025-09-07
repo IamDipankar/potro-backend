@@ -60,17 +60,19 @@ async def refresh_token(resp: Response, request: Request, db: AsyncSession = Dep
     )
     token = request.cookies.get("refresh_token")
     if not token:
+        print("No refresh token cookie")
         raise exception
 
     payload = await oAuth.verify_jwt(token, exception, secret_key=oAuth.REFRESH_TOKEN_SECRET_KEY)
 
     user = await db.get(User, payload.id.lower())
     if not user:
+        print("Refresh token user not found")
         raise exception
     
     data = {
-        "id" : user.id,
-        "role" : "user"
+        "id": user.id,
+        "role": "user"
     }
 
 
