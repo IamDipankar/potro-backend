@@ -15,7 +15,7 @@ async def get_messages_list(current_user: schema.UserID = Depends(oAuth.get_curr
     #     select(Message).where(Message.user_id == user_id).offset(skip).limit(limit)
     # )
     messages = await db.get(User, current_user.id)
-    return messages
+    return messages ## updated
 
 
 @router.get('/get_message/{id}', response_model=schema.Message)
