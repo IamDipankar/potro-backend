@@ -49,7 +49,7 @@ async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(),
     return {
         "access_token": await oAuth.create_access_token(data),
         # "refresh_token": await oAuth.create_refresh_token(data),
-        "token_type" : "bearer"
+        "token_type" : "Bearer"
     }
 
 @router.post('/refresh')
@@ -79,7 +79,7 @@ async def refresh_token(resp: Response, request: Request, db: AsyncSession = Dep
     return {
         "access_token": await oAuth.create_access_token(data),
         # "refresh_token": await oAuth.create_refresh_token(data),
-        "token_type": "bearer"
+        "token_type": "Bearer"
     }
 
 
