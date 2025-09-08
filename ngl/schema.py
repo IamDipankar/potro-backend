@@ -19,6 +19,7 @@ class MessageTimeOnly(BaseModel):
 
 class Inbox(BaseModel):
     id: str
+    message_count : int
     messages: List[MessageTimeOnly]
 
 

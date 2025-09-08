@@ -17,11 +17,13 @@ async def set_refresh_token_cookie(resp: Response, data: dict) -> Response:
         value=await oAuth.create_refresh_token(data),
         max_age=oAuth.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,  ### !!! Danger: recheck before production
-        secure=True,  ### !!! Danger: recheck before production
-        # samesite="strict", ### !!! Danger: recheck before production
+        # secure=True,  ### !!! Danger: recheck before production
+        samesite="strict", ### !!! Danger: recheck before production
         path='/authentication/refresh'
     )
     return resp
+
+## dropping due to samesite none and not secure
 
 @router.post('/signup', response_model=schema.ShowUserOnly, status_code=status.HTTP_201_CREATED)
 async def create_user(request: schema.Signup, db: AsyncSession = Depends(get_db)):
@@ -36,6 +38,7 @@ async def create_user(request: schema.Signup, db: AsyncSession = Depends(get_db)
 
 @router.post('/login', status_code=status.HTTP_202_ACCEPTED)
 async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    print("Login called")
     user = await db.get(User, request.username.lower())
     if not user or not Hash.verify(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
@@ -45,6 +48,12 @@ async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(),
     }
 
     resp = await set_refresh_token_cookie(resp, data)
+    print("Login successful")
+    print("Cookies are:")
+    for name, value in resp.headers.items():
+        if name.lower() == 'set-cookie':
+            print(f"Set-Cookie: {value}")
+    print("=" * 50)
 
     return {
         "access_token": await oAuth.create_access_token(data),
@@ -61,6 +70,8 @@ async def refresh_token(resp: Response, request: Request, db: AsyncSession = Dep
     token = request.cookies.get("refresh_token")
     if not token:
         print("No refresh token cookie")
+        print("Cookies are:")
+        print(request.cookies)
         raise exception
 
     payload = await oAuth.verify_jwt(token, exception, secret_key=oAuth.REFRESH_TOKEN_SECRET_KEY)

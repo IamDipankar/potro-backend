@@ -65,7 +65,10 @@ class User(Base):
     name = Column(String, nullable = False)
     password = Column(String, nullable = False)
 
-    message = relationship("Message", back_populates='user', lazy="selectin")
+    messages = relationship("Message", back_populates='user', lazy="selectin")
+    @property
+    def message_count(self):
+        return len(self.messages) if self.messages else 0
 
 
 
@@ -76,7 +79,7 @@ class Message(Base):
     content = Column(String, nullable = False)
     time = Column(String, nullable = False)
 
-    user = relationship("User", back_populates='message', lazy="selectin")
+    user = relationship("User", back_populates='messages', lazy="selectin")
 
 async def get_db():
     async with AsyncSessionLocal() as db:

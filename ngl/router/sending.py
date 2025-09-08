@@ -2,12 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import *
 from datetime import datetime
 from .. import schema
+from fastapi.responses import FileResponse
 
 router = APIRouter(
     prefix="/sending",
     tags=['Sending']
 )
 
+@router.get("/")
+async def send_page():
+    return FileResponse("pages/send.html")
 
 @router.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
 async def get_user(user_id: str, db: AsyncSession = Depends(get_db)):
