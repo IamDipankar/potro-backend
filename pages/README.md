@@ -18,7 +18,7 @@ react-frontend/
 ├── send.html           # Send anonymous messages
 ├── signup.html         # Create new account
 ├── login.html          # User login
-├── view-messages.html  # View received messages
+├── inbox.html  # View received messages
 └── README.md          # This file
 ```
 
@@ -72,7 +72,7 @@ Then navigate to `http://localhost:8000` in your browser.
 - Automatic redirect to view messages
 - Session management with localStorage
 
-### 5. View Messages (`view-messages.html`)
+### 5. View Messages (`inbox.html`)
 - View all received messages
 - Pagination support
 - Message timestamps

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import *
 from .. import schema, oAuth
-from sqlalchemy import update, select
+from sqlalchemy import update, select, delete
 
 router = APIRouter(
     prefix="/recieving",
@@ -46,3 +46,22 @@ async def get_message(id: int, db: AsyncSession = Depends(get_db), current_user:
         
     await db.commit()
     return row
+
+@router.delete('/delete_message/{id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuth.get_current_user)):
+    stmt = (
+        delete(Message)
+        .where(Message.id == id, Message.user_id == current_user.id)
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+@router.patch('/mark_unread/{id}', status_code=status.HTTP_204_NO_CONTENT)
+async def mark_as_unread(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuth.get_current_user)):
+    stmt = (
+        update(Message)
+        .where(Message.id == id, Message.user_id == current_user.id)
+        .values(unread=True)
+    )
+    await db.execute(stmt)
+    await db.commit()

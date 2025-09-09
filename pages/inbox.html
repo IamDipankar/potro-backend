@@ -85,7 +85,7 @@
 
                         <div id="userIdInfo" class="alert alert-info d-none">
                             <strong>Your User ID:</strong> <span class="user-id-display" id="userIdValue"></span> | 
-                            <strong>Total Messages:</strong> <span id="totalMessages">0</span>
+                            <strong>Unread Messages</strong> <span id="unreadMessages">0</span>
                         </div>
 
                         <div id="noMessagesContainer" class="text-center py-4 d-none">
@@ -154,7 +154,7 @@
             return date.toLocaleString();
         }
 
-        function displayMessages(messages) {
+        function displayMessages(messages, unread_count = 0) {
             const container = document.getElementById('messagesContainer');
             
             if (messages.length === 0) {
@@ -166,10 +166,12 @@
 
             document.getElementById('noMessagesContainer').classList.add('d-none');
             document.getElementById('userIdInfo').classList.remove('d-none');
-            document.getElementById('totalMessages').textContent = messages.length;
+            document.getElementById('unreadMessages').textContent = unread_count;
 
             container.innerHTML = messages.map((message, index) => `
-                <div class="card message-card mb-3 ${message.unread ? 'unread-message' : ''}">
+                <div class="card message-card mb-3 ${message.unread ? 'unread-message' : ''}" 
+                    style="cursor: pointer;" 
+                    data-msg-id="${message.id}">
                     <div class="card-body">
                         <p class="card-text">${message.unread ? 'New Message!!' : 'View message'}</p>
                         <small class="text-muted">
@@ -179,6 +181,15 @@
                     </div>
                 </div>
             `).join('');
+
+
+            container.querySelectorAll('.message-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const msgId = this.dataset.msgId;
+                    window.location.href = `/inbox?msg_id=${msgId}`;
+                });
+            });
+
         }
 
         function updatePagination() {
@@ -254,7 +265,7 @@
                 if (response.ok) {
                     console.log("Inbox recieving ok")
                     const data = await response.json();
-                    displayMessages(data.messages || []);
+                    displayMessages(data.messages || [], data.unread_count);
                     totalPages = Math.ceil((data.message_count || 0) / 10);
                     currentPage = page;
                     updatePagination();

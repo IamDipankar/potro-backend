@@ -1,4 +1,4 @@
-from fastapi import FastAPI, status, HTTPException, Depends, Request
+from fastapi import FastAPI, status, HTTPException, Depends, Request, Response
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +6,7 @@ from .database import *
 from . import router, schema
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
+from . import oAuth
 
 
 @asynccontextmanager
@@ -71,9 +72,15 @@ async def signup_page():
 async def login_page():
     return FileResponse("pages/login.html")
 
-@app.get("/view-messages")
-async def view_messages_page():
-    return FileResponse("pages/view-messages.html")
+@app.get("/inbox")
+async def view_messages_page(request : Request, msg_id : int = None, ):
+    if not msg_id:
+        return FileResponse("pages/inbox.html")
+    else:
+        return templates.TemplateResponse("view-message.html", {
+                "request": request,
+                "msg_id": msg_id
+            })
 
 @app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
 async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):

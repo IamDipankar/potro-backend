@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Message - Potro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .message-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 15px 15px 0 0;
+            color: white;
+            padding: 1.5rem;
+        }
+        .message-time {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        .message-status {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .message-body {
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0 0 15px 15px;
+            min-height: 200px;
+        }
+        .message-content {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #6c757d;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-back-inbox {
+            background: #000;
+            border: 2px solid #000;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .btn-back-inbox:hover {
+            background: #333;
+            border-color: #333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .loading-skeleton {
+            animation: pulse 1.5s ease-in-out infinite;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .message-id {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .anonymous-badge {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .message-actions {
+            border-top: 1px solid #e9ecef;
+            padding: 1.5rem 2rem;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 0 0 15px 15px;
+        }
+        .alert-info {
+            background: rgba(23, 162, 184, 0.1);
+            border: 1px solid rgba(23, 162, 184, 0.2);
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid min-vh-100 py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- Loading State -->
+                <div id="loadingContainer" class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4><i class="fas fa-envelope-open me-2"></i>Loading Message...</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading message details...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorContainer" class="d-none">
+                    <!-- Error content will be populated by JavaScript -->
+                </div>
+
+                <!-- Message Content -->
+                <div id="messageContainer" class="d-none">
+                    <div class="card">
+                        <div class="message-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4><i class="fas fa-envelope-open me-2"></i>Anonymous Message</h4>
+                                    <div class="anonymous-badge">
+                                        <i class="fas fa-user-secret me-1"></i>Anonymous Sender
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="message-id" id="messageId">ID: #...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="message-body">
+                            <div class="message-time text-center mb-3">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Received:</strong> <span id="messageTime">Loading...</span>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This message was sent anonymously. The sender's identity is protected.
+                            </div>
+
+                            <div class="message-content" id="messageContent">
+                                Loading message content...
+                            </div>
+
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Message ID: <span id="messageIdFooter">#...</span> | 
+                                    <span id="messageStatus">Status: Read</span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="message-actions">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div>
+                                    <button class="btn btn-primary me-2" onclick="markAsUnread()">
+                                        <i class="fas fa-envelope me-1"></i>Mark as Unread
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteMessage()">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </div>
+                                <div>
+                                    <a href="/inbox" class="btn btn-back-inbox me-2">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Inbox
+                                    </a>
+                                    <a href="/" class="btn btn-outline-secondary">
+                                        <i class="fas fa-home me-1"></i>Home
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "";
+        let currentMessageId = {{ msg_id }};
+
+        // Get message ID from URL parameters
+        function getMessageId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function showError(title, message, showBackButton = true) {
+            document.getElementById('loadingContainer').classList.add('d-none');
+            document.getElementById('messageContainer').classList.add('d-none');
+            
+            const errorHtml = `
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i>${title}</h4>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="mb-4">
+                            <i class="fas fa-envelope-open-text fa-4x text-muted mb-3"></i>
+                            <h5>${message}</h5>
+                        </div>
+                        <div>
+                            ${showBackButton ? `
+                                <a href="/inbox" class="btn btn-primary me-2">
+                                    <i class="fas fa-arrow-left me-1"></i>Back to Inbox
+                                </a>
+                            ` : ''}
+                            <a href="/" class="btn btn-secondary">
+                                <i class="fas fa-home me-1"></i>Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('errorContainer').innerHTML = errorHtml;
+            document.getElementById('errorContainer').classList.remove('d-none');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function displayMessage(message) {
+            document.getElementById('loadingContainer').classList.add('d-none');
+            document.getElementById('errorContainer').classList.add('d-none');
+            
+            // Populate message data
+            document.getElementById('messageId').textContent = `ID: #${message.id}`;
+            document.getElementById('messageIdFooter').textContent = `#${message.id}`;
+            document.getElementById('messageTime').textContent = formatDate(message.time);
+            document.getElementById('messageContent').textContent = message.content || 'No message content available.';
+            document.getElementById('messageStatus').textContent = `Status: ${message.unread ? 'Unread' : 'Read'}`;
+            
+            // Update page title
+            document.title = `Message #${message.id} - Potro`;
+            
+            // Show message container
+            document.getElementById('messageContainer').classList.remove('d-none');
+            
+            // Update mark as unread button based on current status
+            const unreadBtn = document.querySelector('button[onclick="markAsUnread()"]');
+            if (message.unread) {
+                unreadBtn.innerHTML = '<i class="fas fa-envelope-open me-1"></i>Mark as Read';
+                unreadBtn.onclick = markAsRead;
+            }
+        }
+
+        async function fetchMessage(messageId) {
+            try {
+                const token = localStorage.getItem('access_token');
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+
+                if (!token) {
+                    showError('Authentication Required', 'Please log in to view messages.');
+                    setTimeout(() => {
+                        window.location.href = '/login?return=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    }, 2000);
+                    return;
+                }
+
+                const response = await fetch(`/recieving/get_message/${messageId}`, {
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const message = await response.json();
+                    displayMessage(message);
+                    currentMessageId = messageId;
+                } else if (response.status === 401) {
+                    // Try to refresh token
+                    const refreshed = await refreshToken();
+                    if (refreshed) {
+                        // Retry fetching message
+                        await fetchMessage(messageId);
+                    } else {
+                        showError('Session Expired', 'Please log in again to view messages.');
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    }
+                } else if (response.status === 404) {
+                    showError('Message Not Found', 'The requested message could not be found.');
+                } else {
+                    showError('Error', 'Failed to load message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error fetching message:', error);
+                showError('Connection Error', 'Unable to connect to the server. Please check your internet connection.');
+            }
+        }
+
+        async function refreshToken() {
+            try {
+                const response = await fetch(`/authentication/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('token_type', data.token_type || 'Bearer');
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function markAsUnread() {
+            // Implementation for marking message as unread
+            // console.log('Mark as unread functionality to be implemented');
+            try {
+                const token = localStorage.getItem('access_token');
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+
+                if (!token) {
+                    alert('Authentication required. Please log in.');
+                    setTimeout(() => {
+                        window.location.href = '/login'
+                    }, 1000);
+                    return;
+                }
+
+                const response = await fetch(`/recieving/unread/${currentMessageId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'accept': 'application/json'
+                    }
+                });
+
+                if (response.status === 204) {
+                    window.location.href = '/inbox';
+                } else if (response.status === 401) {
+                    // Try to refresh token
+                    const refreshed = await refreshToken();
+                    if (refreshed) {
+                        // Retry the request
+                        await markAsUnread();
+                    } else {
+                        alert('Session expired. Please log in again.');
+                        window.location.href = '/login';
+                    }
+                } else {
+                    alert('Failed to mark message as unread. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error marking message as unread:', error);
+                alert('Error marking message as unread. Please try again.');
+            } finally {
+                window.location.href = '/inbox';
+            }
+        }
+
+        async function deleteMessage() {
+            if (!currentMessageId) return;
+            
+            if (confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+                try {
+                    const token = localStorage.getItem('access_token');
+                    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+
+                    const response = await fetch(`/recieving/message/${currentMessageId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `${tokenType} ${token}`,
+                            'accept': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        alert('Message deleted successfully!');
+                        window.location.href = '/inbox';
+                    }else if (response.status = 401 && await refreshToken()) {
+                        await deleteMessage();
+                    }else {
+                        alert('Failed to delete message. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error deleting message:', error);
+                    alert('Error deleting message. Please try again.');
+                } finally {
+                    window.location.href = '/inbox';
+                }
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageId = {{ msg_id }};
+            
+            if (!messageId) {
+                showError('Invalid Request', 'No message ID provided.', true);
+                return;
+            }
+
+            fetchMessage(messageId);
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
