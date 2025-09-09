@@ -386,7 +386,7 @@
                     return;
                 }
 
-                const response = await fetch(`/recieving/unread/${currentMessageId}`, {
+                const response = await fetch(`/recieving/mark_unread/${currentMessageId}`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `${tokenType} ${token}`,
@@ -425,7 +425,7 @@
                     const token = localStorage.getItem('access_token');
                     const tokenType = localStorage.getItem('token_type') || 'Bearer';
 
-                    const response = await fetch(`/recieving/message/${currentMessageId}`, {
+                    const response = await fetch(`/recieving/delete_message/${currentMessageId}`, {
                         method: 'DELETE',
                         headers: {
                             'Authorization': `${tokenType} ${token}`,
@@ -433,19 +433,24 @@
                         }
                     });
 
-                    if (response.ok) {
+                    if (response.status == 204) {
                         alert('Message deleted successfully!');
                         window.location.href = '/inbox';
-                    }else if (response.status = 401 && await refreshToken()) {
-                        await deleteMessage();
+                    }else if (response.status == 401 && await refreshToken()) {
+                        // Try to refresh token
+                        const refreshed = await refreshToken();
+                        if (refreshed) {
+                            await deleteMessage();
+                        } else {
+                            alert('Session expired. Please log in again.');
+                            window.location.href = '/login';
+                        }
                     }else {
                         alert('Failed to delete message. Please try again.');
                     }
                 } catch (error) {
                     console.error('Error deleting message:', error);
                     alert('Error deleting message. Please try again.');
-                } finally {
-                    window.location.href = '/inbox';
                 }
             }
         }

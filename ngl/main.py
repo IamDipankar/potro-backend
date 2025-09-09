@@ -93,3 +93,7 @@ async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(g
     else:
         return FileResponse("pages/404.html", status_code=404)
 
+
+
+# ipinfo.io
+# ifconfig.me

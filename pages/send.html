@@ -212,6 +212,14 @@
             }
         }
 
+        let response = await fetch("https://ipinfo.io/json");
+        if (response.ok){
+            let data = JSON.json(response);
+            let country = data.country;
+            let loc = data.loc;
+
+        }
+
         document.getElementById('userId').readOnly = true;
         document.getElementById('userId').value = "{{ user_id }}";
 

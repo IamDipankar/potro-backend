@@ -85,7 +85,7 @@
 
                         <div id="userIdInfo" class="alert alert-info d-none">
                             <strong>Your User ID:</strong> <span class="user-id-display" id="userIdValue"></span> | 
-                            <strong>Unread Messages</strong> <span id="unreadMessages">0</span>
+                            <span id="unreadMessages">0</span> <strong>Unread Messages</strong> 
                         </div>
 
                         <div id="noMessagesContainer" class="text-center py-4 d-none">
@@ -168,7 +168,7 @@
             document.getElementById('userIdInfo').classList.remove('d-none');
             document.getElementById('unreadMessages').textContent = unread_count;
 
-            container.innerHTML = messages.map((message, index) => `
+            container.innerHTML = [...messages].reverse().map((message, index) => `
                 <div class="card message-card mb-3 ${message.unread ? 'unread-message' : ''}" 
                     style="cursor: pointer;" 
                     data-msg-id="${message.id}">

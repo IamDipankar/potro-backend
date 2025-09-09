@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox - Say It</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #10b981;
+            --accent-color: #f59e0b;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-primary: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --shadow-secondary: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-accent: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 25% 25%, #6366f1 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, #8b5cf6 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, #10b981 0%, transparent 50%);
+            background-size: 100% 100%, 100% 100%, 100% 100%;
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .container-fluid {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glass morphism effect */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: var(--shadow-primary);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 32px 64px -12px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Header styling */
+        .header-section {
+            background: var(--gradient-secondary);
+            padding: 2rem;
+            border-radius: 24px 24px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.05) 2px,
+                rgba(255, 255, 255, 0.05) 4px
+            );
+            animation: shimmer 20s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%); }
+            100% { transform: translateX(100%) translateY(100%); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Stats section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-color);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 1rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+        }
+
+        .stat-icon.messages { background: var(--gradient-secondary); }
+        .stat-icon.unread { background: var(--gradient-accent); }
+        .stat-icon.user-id { background: var(--gradient-primary); }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Message cards */
+        .message-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary-color);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .message-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .message-card:hover {
+            transform: translateX(8px);
+            border-color: var(--primary-color);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.1);
+        }
+
+        .unread-message {
+            border-color: var(--secondary-color) !important;
+            background: rgba(16, 185, 129, 0.05) !important;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .unread-message::before {
+            background: var(--secondary-color) !important;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); }
+        }
+
+        .message-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .message-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .message-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .message-text h6 {
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+
+        .message-meta {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn-modern {
+            background: var(--gradient-secondary);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.875rem;
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.3s ease;
+        }
+
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary-modern {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary-modern:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+        }
+
+        /* Pagination */
+        .pagination-modern {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .page-btn:hover:not(.disabled) {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .page-btn.active {
+            background: var(--gradient-secondary);
+            border-color: var(--primary-color);
+        }
+
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading and states */
+        .loading-container {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: var(--gradient-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header-section {
+                padding: 1.5rem;
+            }
+            
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-section {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.5rem;
+            }
+            
+            .message-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Alert styling */
+        .alert-modern {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-danger {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Badge styling */
+        .badge-modern {
+            background: var(--gradient-accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <div class="container-fluid min-vh-100 py-4">
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                <div class="glass-card animate__animated animate__fadeInUp">
+                    <!-- Header Section -->
+                    <div class="header-section">
+                        <div class="header-content d-flex justify-content-between align-items-center">
+                            <div class="logo-section">
+                                <div class="logo-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-0 fw-bold">Say It</h2>
+                                    <p class="mb-0 opacity-75">Anonymous Messages</p>
+                                </div>
+                            </div>
+                            <div class="user-section">
+                                <div class="text-end me-3">
+                                    <p class="mb-0 opacity-75">Welcome back</p>
+                                    <h6 class="mb-0 fw-bold" id="usernameDisplay"></h6>
+                                </div>
+                                <div class="user-avatar" id="userAvatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        <!-- Loading State -->
+                        <div id="loadingSpinner" class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <h5 class="text-primary">Loading your messages...</h5>
+                            <p class="text-muted">Please wait while we fetch your latest messages</p>
+                        </div>
+
+                        <!-- Error Container -->
+                        <div id="errorContainer"></div>
+
+                        <!-- Stats Section -->
+                        <div id="statsSection" class="stats-section d-none">
+                            <div class="stat-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                                <div class="stat-icon messages">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="stat-number" id="totalMessages">0</div>
+                                <div class="text-muted">Total Messages</div>
+                            </div>
+                            <div class="stat-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                                <div class="stat-icon unread">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div class="stat-number" id="unreadMessages">0</div>
+                                <div class="text-muted">Unread Messages</div>
+                            </div>
+                            <div class="stat-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                                <div class="stat-icon user-id">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="stat-number" style="font-size: 1.25rem;" id="userIdValue"></div>
+                                <div class="text-muted">Your User ID</div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="noMessagesContainer" class="empty-state d-none">
+                            <div class="empty-icon">
+                                <i class="fas fa-inbox"></i>
+                            </div>
+                            <h4 class="text-primary mb-3">Your inbox is empty</h4>
+                            <p class="text-muted mb-4">Share your user ID with others to start receiving anonymous messages!</p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <button class="btn btn-modern" onclick="copyUserID()">
+                                    <i class="fas fa-copy me-2"></i>Copy User ID
+                                </button>
+                                <button class="btn btn-secondary-modern" onclick="refreshMessages()">
+                                    <i class="fas fa-refresh me-2"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Messages Container -->
+                        <div id="messagesContainer"></div>
+
+                        <!-- Pagination -->
+                        <div id="paginationContainer" class="pagination-modern d-none">
+                            <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="page-btn active" id="pageInfo">1</div>
+                            <button class="page-btn" id="nextPageBtn" onclick="changePage(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="text-center mt-4">
+                            <button class="btn btn-modern me-3" onclick="refreshMessages()">
+                                <i class="fas fa-sync-alt me-2"></i>Refresh Messages
+                            </button>
+                            <a href="/" class="btn btn-secondary-modern">
+                                <i class="fas fa-home me-2"></i>Back to Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "" // revise
+        let currentPage = 1;
+        let totalPages = 1;
+        let username = '';
+
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('bgParticles');
+            const particleCount = 20;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 3 + 1;
+                const delay = Math.random() * 20;
+                const duration = Math.random() * 10 + 15;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                container.appendChild(particle);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorContainer').innerHTML = `
+                <div class="alert alert-modern alert-danger alert-dismissible fade show animate__animated animate__slideInDown" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.add('d-none');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function displayMessages(messages, unread_count = 0, total_count = 0) {
+            const container = document.getElementById('messagesContainer');
+            const statsSection = document.getElementById('statsSection');
+            const noMessagesContainer = document.getElementById('noMessagesContainer');
+            
+            // Update stats
+            document.getElementById('totalMessages').textContent = total_count;
+            document.getElementById('unreadMessages').textContent = unread_count;
+            
+            if (messages.length === 0) {
+                container.innerHTML = '';
+                noMessagesContainer.classList.remove('d-none');
+                statsSection.classList.remove('d-none');
+                return;
+            }
+
+            noMessagesContainer.classList.add('d-none');
+            statsSection.classList.remove('d-none');
+
+            container.innerHTML = messages.map((message, index) => `
+                <div class="message-card ${message.unread ? 'unread-message' : ''} animate__animated animate__fadeInUp" 
+                     style="cursor: pointer; animation-delay: ${index * 0.1}s;" 
+                     data-msg-id="${message.id}">
+                    <div class="message-content">
+                        <div class="message-info">
+                            <div class="message-icon">
+                                <i class="fas fa-${message.unread ? 'bell' : 'envelope'}"></i>
+                            </div>
+                            <div class="message-text">
+                                <h6>${message.unread ? 'New Message Available!' : 'Message Received'}</h6>
+                                <div class="message-meta">
+                                    <i class="fas fa-clock"></i>
+                                    <span>${formatDate(message.time)}</span>
+                                    ${message.unread ? '<span class="badge-modern ms-2">New</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers with animation
+            container.querySelectorAll('.message-card').forEach((card, index) => {
+                card.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        const msgId = this.dataset.msgId;
+                        window.location.href = `/inbox?msg_id=${msgId}`;
+                    }, 150);
+                });
+
+                // Add hover sound effect (optional)
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(8px) translateY(-2px)';
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0) translateY(0)';
+                });
+            });
+        }
+
+        function updatePagination() {
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            const paginationContainer = document.getElementById('paginationContainer');
+
+            prevBtn.classList.toggle('disabled', currentPage === 1);
+            nextBtn.classList.toggle('disabled', currentPage === totalPages);
+            pageInfo.textContent = currentPage;
+
+            if (totalPages > 1) {
+                paginationContainer.classList.remove('d-none');
+            } else {
+                paginationContainer.classList.add('d-none');
+            }
+        }
+
+        async function refreshToken() {
+            try {
+                console.log("Sending refresh token");
+                const response = await fetch(`/authentication/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                console.log("Its here")
+
+                if (response.ok) {
+                    console.log("Response was ok")
+                    const data = await response.json();
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('token_type', data.token_type || 'Bearer');
+                    return true;
+                }
+                console.log("Problem in response")
+                return false;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function fetchMessages(page = 1) {
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+            document.getElementById('errorContainer').innerHTML = '';
+            const perPage = 10
+
+            try {
+                const token = localStorage.getItem('access_token');
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+
+                if (!token) {
+                    hideLoading();
+                    showError('No access token found....');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1000);
+                    return;
+                }
+
+                const response = await fetch(`/recieving/inbox?skip=${(page-1) * perPage}&limit=${perPage}`, {
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    console.log("Inbox receiving ok")
+                    const data = await response.json();
+                    displayMessages(data.messages || [], data.unread_count, data.message_count);
+                    totalPages = Math.ceil((data.message_count || 0) / 10);
+                    currentPage = page;
+                    updatePagination();
+                } else if (response.status === 401) {
+                    // Try to refresh token
+                    const refreshed = await refreshToken();
+                    if (refreshed) {
+                        fetchMessages(page);
+                        return; 
+                    } else {
+                        showError('Session expired....');
+                    }
+                } else {
+                    showError(`Failed to fetch messages: ${response.status}`);
+                }
+            } catch (error) {
+                showError(`Failed to connect to server ${error}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            console.log(`New page : ${newPage}`)
+            if (newPage >= 1 && newPage <= totalPages) {
+                // Add loading animation
+                document.querySelectorAll('.message-card').forEach((card, index) => {
+                    card.style.animation = `fadeOut 0.3s ease-in-out ${index * 0.05}s forwards`;
+                });
+                
+                setTimeout(() => {
+                    fetchMessages(newPage);
+                }, 300);
+            }
+        }
+
+        function refreshMessages() {
+            // Add refresh animation
+            const refreshBtn = event.target;
+            const icon = refreshBtn.querySelector('i');
+            icon.style.animation = 'spin 1s linear infinite';
+            
+            setTimeout(() => {
+                icon.style.animation = '';
+            }, 1000);
+            
+            fetchMessages(currentPage);
+        }
+
+        function logout() {
+            // Add logout animation
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease';
+            
+            setTimeout(() => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('token_type');
+                localStorage.removeItem('username');
+                window.location.href = '/';
+            }, 500);
+        }
+
+        function copyUserID() {
+            const userID = document.getElementById('userIdValue').textContent;
+            navigator.clipboard.writeText(userID).then(() => {
+                // Show success feedback
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+                btn.style.background = 'var(--gradient-accent)';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = 'var(--gradient-secondary)';
+                }, 2000);
+            });
+        }
+
+        // Initialize page with animations
+        document.addEventListener('DOMContentLoaded', function() {
+            username = localStorage.getItem('username');
+            
+            if (!username) {
+                hideLoading();
+                showError('Not logged in. Redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1000);
+                return;
+            }
+
+            // Create background particles
+            createParticles();
+
+            // Set user info
+            document.getElementById('usernameDisplay').textContent = username;
+            document.getElementById('userIdValue').textContent = username;
+            
+            // Set user avatar initial
+            const userAvatar = document.getElementById('userAvatar');
+            userAvatar.textContent = username.charAt(0).toUpperCase();
+
+            // Fetch messages with delay for smooth animation
+            setTimeout(() => {
+                fetchMessages();
+            }, 500);
+
+            // Add scroll animations
+            window.addEventListener('scroll', () => {
+                const cards = document.querySelectorAll('.message-card');
+                cards.forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    if (rect.top < window.innerHeight && rect.bottom > 0) {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+        });
+
+        // Add custom fade out animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                to {
+                    opacity: 0;
+                    transform: translateX(-20px);
+                }
+            }
+            
+            .message-card {
+                opacity: 0;
+                transform: translateY(20px);
+                transition: opacity 0.6s ease, transform 0.6s ease;
+            }
+            
+            .message-card.animate__fadeInUp {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' && currentPage > 1) {
+                changePage(-1);
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                changePage(1);
+            } else if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                refreshMessages();
+            }
+        });
+
+        // Add visual feedback for interactions
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-modern') || e.target.closest('.btn-modern')) {
+                const btn = e.target.classList.contains('btn-modern') ? e.target : e.target.closest('.btn-modern');
+                btn.style.transform = 'translateY(-2px) scale(0.98)';
+                setTimeout(() => {
+                    btn.style.transform = 'translateY(-2px) scale(1)';
+                }, 150);
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
