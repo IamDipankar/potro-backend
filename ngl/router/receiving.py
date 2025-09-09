@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import *
 from .. import schema, oAuth
+from sqlalchemy import update, select
 
 router = APIRouter(
     prefix="/recieving",
@@ -20,10 +21,28 @@ async def get_messages_list(current_user: schema.UserID = Depends(oAuth.get_curr
 
 @router.get('/get_message/{id}', response_model=schema.Message)
 async def get_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuth.get_current_user)):
-    message = await db.get(Message, id)
-    if message:
-        if message.user_id != current_user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You are not authorized to view this message')
-        return message
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='You are not authorized to view this message')
+    # Atomically mark as read and return the row
+    stmt = (
+        update(Message)
+        .where(Message.id == id, Message.user_id == current_user.id)
+        # Only write if it was unread; avoids needless writes
+        .where(Message.unread.is_(True))
+        .values(unread=False)
+        .returning(Message)
+    )
+    res = await db.execute(stmt)
+    row = res.scalar_one_or_none()
+
+    if row is None:
+        # Could be: not found, not owned, or already read.
+        # If you want to still return the message even if already read:
+        # do a SELECT fallback.
+        sel = select(Message).where(
+            Message.id == id, Message.user_id == current_user.id
+        )
+        row = (await db.execute(sel)).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+        
+    await db.commit()
+    return row

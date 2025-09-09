@@ -84,5 +84,5 @@ async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(g
                 "user_id": user_id.strip()
             })
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
+        return FileResponse("pages/404.html", status_code=404)
 

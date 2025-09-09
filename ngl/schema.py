@@ -13,14 +13,16 @@ class ShowUserOnly(BaseModel):
     id: str
     name : str
 
-class MessageTimeOnly(BaseModel):
+class MessageInboxItem(BaseModel):
     id : int
     time : str
+    unread : bool
 
 class Inbox(BaseModel):
     id: str
     message_count : int
-    messages: List[MessageTimeOnly]
+    unread_count : int
+    messages: List[MessageInboxItem]
 
 
 class Signup(BaseModel):
@@ -31,9 +33,14 @@ class Signup(BaseModel):
 class UserID(BaseModel):
     id : str
 
-class Message(BaseModel):
+class FullMessage(BaseModel):
     time: str
     user: UserID
+    content: str
+    unread: bool
+
+class Message(BaseModel):
+    time: str
     content: str
 
 class RefreshToken(BaseModel):

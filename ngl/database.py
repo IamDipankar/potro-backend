@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Column, String, Integer
+from sqlalchemy import ForeignKey, Column, String, Integer, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 import os
@@ -69,6 +69,12 @@ class User(Base):
     @property
     def message_count(self):
         return len(self.messages) if self.messages else 0
+    
+    @property
+    def unread_count(self):
+        if self.messages:
+            return sum(1 for message in self.messages if message.unread)
+        return 0
 
 
 
@@ -78,6 +84,7 @@ class Message(Base):
     user_id = Column(String, ForeignKey("users.id"), index=True, nullable = False)
     content = Column(String, nullable = False)
     time = Column(String, nullable = False)
+    unread = Column(Boolean, default=True)  # True for unread, False for read
 
     user = relationship("User", back_populates='messages', lazy="selectin")
 

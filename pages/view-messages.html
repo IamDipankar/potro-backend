@@ -44,6 +44,19 @@
             background-clip: text;
             font-weight: bold;
         }
+        .unread-message {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-left-color: #28a745 !important;
+            border-left-width: 6px !important;
+        }
+        .unread-message .card-text {
+            color: #212529;
+            font-weight: bold;
+        }
+        .unread-message .text-muted {
+            color: #495057 !important;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -156,11 +169,12 @@
             document.getElementById('totalMessages').textContent = messages.length;
 
             container.innerHTML = messages.map((message, index) => `
-                <div class="card message-card mb-3">
+                <div class="card message-card mb-3 ${message.unread ? 'unread-message' : ''}">
                     <div class="card-body">
-                        <p class="card-text">${message.message}</p>
+                        <p class="card-text">${message.unread ? 'New Message!!' : 'View message'}</p>
                         <small class="text-muted">
-                            <i class="fas fa-clock me-1"></i>Received: ${formatDate(message.timestamp)}
+                            <i class="fas fa-clock me-1"></i>Received: ${formatDate(message.time)}
+                            ${message.unread ? '<span class="badge bg-primary ms-2">New</span>' : ''}
                         </small>
                     </div>
                 </div>
@@ -215,6 +229,7 @@
         async function fetchMessages(page = 1) {
             document.getElementById('loadingSpinner').classList.remove('d-none');
             document.getElementById('errorContainer').innerHTML = '';
+            const perPage = 10
 
             try {
                 const token = localStorage.getItem('access_token');
@@ -229,7 +244,7 @@
                     return;
                 }
 
-                const response = await fetch(`/recieving/inbox?skip=${page}&limit=10`, {
+                const response = await fetch(`/recieving/inbox?skip=${(page-1) * perPage}&limit=${perPage}`, {
                     headers: {
                         'Authorization': `${tokenType} ${token}`,
                         'accept': 'application/json'
@@ -239,7 +254,6 @@
                 if (response.ok) {
                     console.log("Inbox recieving ok")
                     const data = await response.json();
-                    messages_loaded = (data.messages.length);
                     displayMessages(data.messages || []);
                     totalPages = Math.ceil((data.message_count || 0) / 10);
                     currentPage = page;
@@ -268,6 +282,7 @@
 
         function changePage(direction) {
             const newPage = currentPage + direction;
+            console.log(`New page : ${newPage}`)
             if (newPage >= 1 && newPage <= totalPages) {
                 fetchMessages(newPage);
             }
