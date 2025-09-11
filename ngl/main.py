@@ -10,6 +10,9 @@ from . import oAuthentication
 from starlette.middleware.sessions import SessionMiddleware
 
 
+import psutil
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create tables
@@ -29,6 +32,16 @@ app = FastAPI(
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
 
 templates = Jinja2Templates(directory="pages")
+
+async def memory_usages():
+    mem = psutil.virtual_memory()
+    return {
+        "Total RAM (MB)": f"{mem.total / (1024 ** 2):.2f} MB",
+        "Used RAM (MB)": f"{mem.used / (1024 ** 2):.2f} MB",
+        "Available RAM (MB)": f"{mem.available / (1024 ** 2):.2f} MB",
+        "Memory usage (%)": f"{mem.percent:.2f}%"
+    }
+
 # def titlecase(s: str) -> str:
 #     return s.title()
 # templates.env.filters["titlecase"] = titlecase
@@ -85,6 +98,11 @@ async def view_messages_page(request : Request, msg_id : int = None, ):
                 "msg_id": msg_id
             })
 
+@app.get("/memory-usages")
+async def get_memory_usages():
+    return await memory_usages()
+
+
 @app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
 async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id.lower())
@@ -95,3 +113,5 @@ async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(g
             })
     else:
         return FileResponse("pages/404.html", status_code=404)
+    
+
