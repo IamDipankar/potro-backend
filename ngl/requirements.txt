@@ -13,3 +13,4 @@ requests
 authlib
 itsdangerous
 psutil
+httpx
