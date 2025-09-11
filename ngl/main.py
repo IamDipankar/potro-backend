@@ -9,6 +9,8 @@ from fastapi.templating import Jinja2Templates
 from . import oAuthentication
 from starlette.middleware.sessions import SessionMiddleware
 
+from pathlib import Path
+
 
 import psutil
 
@@ -33,13 +35,23 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "de
 
 templates = Jinja2Templates(directory="pages")
 
+def readint(p):
+    try:
+        s = Path(p).read_text().strip()
+        return None if s in ("", "max") else int(s)
+    except FileNotFoundError:
+        return None
+
 async def memory_usages():
-    mem = psutil.virtual_memory()
+    limit = readint("/sys/fs/cgroup/memory.max") or readint("/sys/fs/cgroup/memory/memory.limit_in_bytes")
+    usage = readint("/sys/fs/cgroup/memory.current") or readint("/sys/fs/cgroup/memory/memory.usage_in_bytes")
+
+    print("cgroup limit bytes:", limit)
+    print("cgroup usage bytes:", usage)
+
     return {
-        "Total RAM (MB)": f"{mem.total / (1024 ** 2):.2f} MB",
-        "Used RAM (MB)": f"{mem.used / (1024 ** 2):.2f} MB",
-        "Available RAM (MB)": f"{mem.available / (1024 ** 2):.2f} MB",
-        "Memory usage (%)": f"{mem.percent:.2f}%"
+        "Limit (bytes)": limit,
+        "Usage (bytes)": usage,
     }
 
 # def titlecase(s: str) -> str:
