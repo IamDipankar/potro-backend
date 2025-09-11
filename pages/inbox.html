@@ -328,6 +328,14 @@
             document.getElementById('userIdValue').textContent = username;
             fetchMessages();
         });
+
+        document.addEventListener("pageshow", function(){
+            refreshMessages();
+        });
+
+        document.addEventListener("visibilitychange", function(){
+            refreshMessages();
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

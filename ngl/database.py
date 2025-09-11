@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Column, String, Integer, Boolean
+from sqlalchemy import ForeignKey, Column, String, Integer, Boolean, BigInteger, select
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 import os
@@ -45,27 +45,15 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
-# class User(Base):
-#     __tablename__ = "user"
-#     Name = Column(String)
-#     id = Column(Integer, primary_key=True, index=True)
-#     email = Column(String, unique=True, index=True)
-#     bio_data = Column(String)
-
-# class Post(Base):
-#     __tablename__ = "posts"
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_id = Column(Integer, ForeignKey("user.id"), index=True)
-#     title = Column(String)
-#     content = Column(String)
-
 class User(Base):
     __tablename__ = "users"
     id = Column(String, primary_key=True, index=True, nullable = False)
     name = Column(String, nullable = False)
-    password = Column(String, nullable = False)
+    password = Column(String, nullable = True)  # Nullable for OAuth users
+    email = Column(String, unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
 
     messages = relationship("Message", back_populates='user', lazy="selectin")
+    # oauth_id = relationship("GoogleUsers", back_populates="user", lazy="selectin")
     @property
     def message_count(self):
         return len(self.messages) if self.messages else 0
@@ -91,3 +79,11 @@ class Message(Base):
 async def get_db():
     async with AsyncSessionLocal() as db:
         yield db
+
+
+class GoogleUsers(Base):
+    __tablename__ = "google_users"
+    sub = Column(BigInteger, unique=True, index=True, nullable = False, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), index=False, nullable = False)
+
+    user = relationship("User", lazy="selectin")

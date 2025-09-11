@@ -71,7 +71,7 @@ Since the PostgreSQL database is hosted on Render (not locally), the configurati
 - Replaced `aiosqlite` with `asyncpg` for PostgreSQL support
 - Added `python-dotenv` for environment variable management
 
-### Security (`oAuth.py`)
+### Security (`oAuthentication.py`)
 - Updated to use environment variables for all configuration
 - Made token expiration times configurable
 

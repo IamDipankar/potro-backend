@@ -45,3 +45,7 @@ class Message(BaseModel):
 
 class RefreshToken(BaseModel):
     token: str
+
+class OAuthSignup(BaseModel):
+    user_id: str
+    name: str

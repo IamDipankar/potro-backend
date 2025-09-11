@@ -6,7 +6,8 @@ from .database import *
 from . import router, schema
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
-from . import oAuth
+from . import oAuthentication
+from starlette.middleware.sessions import SessionMiddleware
 
 
 @asynccontextmanager
@@ -24,6 +25,8 @@ app = FastAPI(
     redoc_url="/SobaiBolo-redoc",     # Disable ReDoc (/redoc)
     openapi_url="/SobaiBolo-openapi.json"    # Disable OpenAPI schema (/openapi.json)
 )
+
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
 
 templates = Jinja2Templates(directory="pages")
 # def titlecase(s: str) -> str:
@@ -92,8 +95,3 @@ async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(g
             })
     else:
         return FileResponse("pages/404.html", status_code=404)
-
-
-
-# ipinfo.io
-# ifconfig.me
