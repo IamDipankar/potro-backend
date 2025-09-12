@@ -92,7 +92,7 @@ Then navigate to `http://localhost:8000` in your browser.
 ### Backend Integration
 The frontend communicates with the backend API at:
 ```
-https://potro-backend-1.onrender.com
+https://.onrender.com
 ```
 
 ### API Endpoints Used

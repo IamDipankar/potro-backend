@@ -57,6 +57,64 @@
             color: #495057 !important;
             font-weight: 600;
         }
+        .share-link-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .link-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: right;
+            direction: rtl;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .link-input:focus {
+            text-align: left;
+            direction: ltr;
+        }
+        .copy-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+        .copy-btn:hover {
+            background: linear-gradient(45deg, #218838, #1ea085);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .copy-btn.copied {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+        }
+        .unread-info {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .unread-badge {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -83,9 +141,24 @@
 
                         <div id="errorContainer"></div>
 
-                        <div id="userIdInfo" class="alert alert-info d-none">
-                            <strong>Your User ID:</strong> <span class="user-id-display" id="userIdValue"></span> | 
-                            <span id="unreadMessages">0</span> <strong>Unread Messages</strong> 
+                        <div id="userIdInfo" class="d-none">
+                            <div class="share-link-container">
+                                <div class="mb-2">
+                                    <strong><i class="fas fa-share-alt me-2"></i>Your Link:</strong>
+                                </div>
+                                <div class="d-flex gap-2 mb-3">
+                                    <input type="text" class="form-control link-input flex-grow-1" id="shareableLink" readonly>
+                                    <button class="btn copy-btn" id="copyBtn" onclick="copyLink()">
+                                        <i class="fas fa-copy me-1"></i>Copy
+                                    </button>
+                                </div>
+                                <div class="unread-info">
+                                    <span class="unread-badge">
+                                        <i class="fas fa-envelope me-1"></i>
+                                        <span id="unreadMessages">0</span> Unread Messages
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="noMessagesContainer" class="text-center py-4 d-none">
@@ -311,6 +384,48 @@
             window.location.href = '/';
         }
 
+        function copyLink() {
+            const linkInput = document.getElementById('shareableLink');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            // Select and copy the link
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                navigator.clipboard.writeText(linkInput.value).then(() => {
+                    // Success feedback
+                    copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                    copyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy';
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    document.execCommand('copy');
+                    copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                    copyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy';
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                });
+            } catch (err) {
+                // Fallback for very old browsers
+                document.execCommand('copy');
+                copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             username = localStorage.getItem('username');
@@ -325,7 +440,7 @@
             }
 
             document.getElementById('usernameDisplay').textContent = username;
-            document.getElementById('userIdValue').textContent = username;
+            document.getElementById('shareableLink').value = `potro-messaging.onrender.com/${username}`;
             fetchMessages();
         });
 
