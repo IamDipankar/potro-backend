@@ -130,7 +130,7 @@
 
     <script>
         const BASE_URL = "";
-        let userIdAvailable = false;
+        let userIdAvailable = true;
 
         document.getElementById('name').value = "{{ name }}"
         document.getElementById('userId').value = "{{ suggested_id }}"
@@ -187,63 +187,65 @@
             document.getElementById('signupBtn').disabled = !isValid;
         }
 
-        async function handleLogin(id, password) {
+        updateSubmitButton();
 
-            // const username = document.getElementById('username').value.trim();
-            // const password = document.getElementById('password').value.trim();
+        // async function handleLogin(id, password) {
 
-            // if (!username || !password) {
-            //     showAlert('Please enter both username and password');
-            //     return;
-            // }
+        //     // const username = document.getElementById('username').value.trim();
+        //     // const password = document.getElementById('password').value.trim();
 
-            // document.getElementById('loginBtn').disabled = true;
-            // document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Logging in...';
+        //     // if (!username || !password) {
+        //     //     showAlert('Please enter both username and password');
+        //     //     return;
+        //     // }
 
-            try {
-                const formData = new URLSearchParams();
-                formData.append('grant_type', 'password');
-                formData.append('username', id);
-                formData.append('password', password);
-                formData.append('scope', '');
-                formData.append('client_id', 'string');
-                formData.append('client_secret', '********');
+        //     // document.getElementById('loginBtn').disabled = true;
+        //     // document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Logging in...';
 
-                const response = await fetch(`/authentication/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: formData,
-                    // credentials: "include" //Danger
-                });
+        //     try {
+        //         const formData = new URLSearchParams();
+        //         formData.append('grant_type', 'password');
+        //         formData.append('username', id);
+        //         formData.append('password', password);
+        //         formData.append('scope', '');
+        //         formData.append('client_id', 'string');
+        //         formData.append('client_secret', '********');
 
-                if (response.status === 202) {
-                    const data = await response.json();
-                    if (data.access_token) {
-                        // Store tokens in localStorage for the view messages page
-                        // Cookies part
-                        localStorage.setItem('access_token', data.access_token);
-                        localStorage.setItem('token_type', data.token_type || 'Bearer');
-                        localStorage.setItem('username', formData.username);
+        //         const response = await fetch(`/authentication/login`, {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/x-www-form-urlencoded'
+        //             },
+        //             body: formData,
+        //             // credentials: "include" //Danger
+        //         });
+
+        //         if (response.status === 202) {
+        //             const data = await response.json();
+        //             if (data.access_token) {
+        //                 // Store tokens in localStorage for the view messages page
+        //                 // Cookies part
+        //                 localStorage.setItem('access_token', data.access_token);
+        //                 localStorage.setItem('token_type', data.token_type || 'Bearer');
+        //                 localStorage.setItem('username', formData.username);
                         
-                        showAlert('Login successful! Redirecting to messages...', 'success');
-                        setTimeout(() => {
-                            window.location.href = '/inbox';
-                        }, 1500);
-                    } else {
-                        showAlert('Login failed. Invalid response from server.');
-                    }
-                } else if (response.status === 401) {
-                    showAlert('Invalid credentials. Please try again.');
-                } else {
-                    showAlert(`Login failed. Server responded with: ${response.status}`);
-                }
-            } catch (error) {
-                showAlert('Failed to connect to server');
-                console.log(error);
-            } 
-        }
+        //                 showAlert('Login successful! Redirecting to messages...', 'success');
+        //                 setTimeout(() => {
+        //                     window.location.href = '/inbox';
+        //                 }, 1500);
+        //             } else {
+        //                 showAlert('Login failed. Invalid response from server.');
+        //             }
+        //         } else if (response.status === 401) {
+        //             showAlert('Invalid credentials. Please try again.');
+        //         } else {
+        //             showAlert(`Login failed. Server responded with: ${response.status}`);
+        //         }
+        //     } catch (error) {
+        //         showAlert('Failed to connect to server');
+        //         console.log(error);
+        //     } 
+        // }
 
         async function handleSignup(e) {
             e.preventDefault();
@@ -274,30 +276,30 @@
             document.getElementById('signupBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating Account...';
 
             try {
-                const response = await fetch(`/authentication/oauth_signup`, {
+                const response = await fetch(`/authentication/oauth_signup/{{ medium }}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        id: formData.id,
+                        user_id: formData.id,
                         name: formData.name,
-                    })
+                    }),
+                    credentials: "include"
                 });
 
-                if (response.status === 201) {
+                if (response.status === 202) {
                     showAlert(`
                         <strong>Success!</strong> User created successfully!<br>
                         <strong>Your user ID is:</strong> ${formData.id}<br>
                         Others can now send you anonymous messages using this ID.
                     `, 'success');
-                    document.getElementById('signupForm').reset();
-                    document.getElementById('userIdStatus').innerHTML = '';
-                    userIdAvailable = false;
-                    // await handleLogin(formData.id, formData.password);
                     data = await response.json();
-                    localStorage.setItem("access_token") = data.access_token;
-                    localStorage.setItem("token_type") = data.token_type;
+                    localStorage.setItem("access_token", data.access_token);
+                    localStorage.setItem("token_type", data.token_type);
+                    localStorage.setItem('username', formData.id);
+                    
+                    
                     window.location.href = '/inbox';
                 } else if (response.status === 400) {
                     const data = await response.json();
@@ -310,7 +312,7 @@
                     showAlert('An error occurred. Please try again.');
                 }
             } catch (error) {
-                showAlert('Failed to connect to server');
+                showAlert(error);
             } finally {
                 document.getElementById('signupBtn').innerHTML = '<i class="fas fa-user-plus me-1"></i>Create Account';
                 updateSubmitButton();
@@ -325,8 +327,8 @@
         });
 
         document.getElementById('name').addEventListener('input', updateSubmitButton);
-        document.getElementById('password').addEventListener('input', updateSubmitButton);
-        document.getElementById('confirmPassword').addEventListener('input', updateSubmitButton);
+        // document.getElementById('password').addEventListener('input', updateSubmitButton);
+        // document.getElementById('confirmPassword').addEventListener('input', updateSubmitButton);
 
         document.getElementById('signupForm').addEventListener('submit', handleSignup);
     </script>

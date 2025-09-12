@@ -8,10 +8,10 @@ from ..hashing import Hash
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi.templating import Jinja2Templates
 import dotenv
+import warnings
+import time
 
 dotenv.load_dotenv()
-
-templates = Jinja2Templates(directory="pages")
 
 router = APIRouter(
     prefix="/authentication",
@@ -30,6 +30,8 @@ oauth.register(
     },
 )
 
+templates = Jinja2Templates(directory="pages")
+
 
 async def set_refresh_token_cookie(resp: Response, data: dict) -> Response:
     resp.set_cookie(
@@ -43,7 +45,7 @@ async def set_refresh_token_cookie(resp: Response, data: dict) -> Response:
     )
     return resp
 
-async def send_login(user_id):
+async def send_login(user_id, resp: Response = None, status_code: int = status.HTTP_202_ACCEPTED):
     data = {
         "id": user_id,
         "role": "user"
@@ -54,6 +56,8 @@ async def send_login(user_id):
         if name.lower() == 'set-cookie':
             print(f"Set-Cookie: {value}")
     print("=" * 50)
+
+    resp.status_code = status_code
 
     return {
         "access_token": await oAuthentication.create_access_token(data),
@@ -86,7 +90,7 @@ async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(),
     if not user or not Hash.verify(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
 
-    return await send_login(user.id)
+    return await send_login(user.id, resp)
 
 @router.post('/refresh')
 async def refresh_token(resp: Response, request: Request, db: AsyncSession = Depends(get_db)):
@@ -131,81 +135,112 @@ async def google_login(request: Request):
 async def google_auth(request: Request, resp: Response, db: AsyncSession = Depends(get_db)):
     try:
         token = await oauth.google.authorize_access_token(request)
-        # token contains access_token, id_token, etc.
         userinfo = token.get("userinfo")
-        # If userinfo not present, fetch explicitly:
         if not userinfo:
             userinfo = await oauth.google.parse_id_token(request, token)
         if not userinfo:
             raise HTTPException(status_code=400, detail="Failed to obtain user info")
-
+        print("Google user info:", userinfo)
+        safe = userinfo.get("email_verified", False) and userinfo.get("aud") == os.getenv("GOOGLE_CLIENT_ID") and userinfo.get("iss") in ['https://accounts.google.com', 'accounts.google.com'] and userinfo.get("exp", 0) > int(time.time())
+        if not safe:
+            raise HTTPException(status_code=400, detail="Unsafe Google login attempt")
+        
         # Check if user with this Google sub exists
         google_login = await db.execute(
-            select(GoogleUsers).where(GoogleUsers.sub == int(userinfo["sub"]))
+            select(GoogleUsers).where(GoogleUsers.sub == str(userinfo["sub"]))
         )
 
         google_login = google_login.scalars().first()
         if google_login:
             user = await db.get(User, google_login.user_id)
             if user:
-                return await send_login(user.id)
+                data = await send_login(user.id, resp)
+                response = templates.TemplateResponse("loginskeleton.html", {
+                    "request": request,
+                    "access_token": data["access_token"],
+                    "token_type": data["token_type"],
+                    "user_id": user.id
+                })
+
+                await set_refresh_token_cookie(response, {
+                        "id": user.id,
+                        "role": "user"
+                    })
+                
+                return response
             else:
-                name = userinfo.get("name")
-                email = userinfo.get("email")
-                suggested_id = await generate_user_id(userinfo["email"], db)
+                warnings.warn("Google user linked to non-existent user id, Attempting delete")
+                db.delete(google_login)
+                await db.commit()
+    
+        name = userinfo.get("name")
+        email = userinfo.get("email")
+        suggested_id = await generate_user_id(userinfo["email"], db)
+        
 
-                resp.set_cookie("oauth_signup_key", 
-                                value= await oAuthentication.create_access_token({
-                                                                                "signature": os.getenv("SIGNATURE"),
-                                                                                "sub": userinfo["sub"],
-                                                                                "email": email,
-                                                                                }), 
-                                max_age=300, 
-                                httponly=True, 
-                                samesite="strict", 
-                                path="/authentication/oauth_signup")
-
-                return templates.TemplateResponse("oauthSignup.html", {
-                                                        "request": request,
-                                                        "name": name,
-                                                        "suggested_id": suggested_id
-                                                    })
+        resp = templates.TemplateResponse("oauthSignup.html", {
+                                                "request": request,
+                                                "name": name,
+                                                "suggested_id": suggested_id,
+                                                "medium": "google"
+                                                })
+        
+        resp.set_cookie(key="oauth_signup_key",
+                        value=await oAuthentication.create_access_token({
+                                "signature": os.getenv("SIGNATURE"),
+                                "sub": userinfo["sub"],
+                                "email": email,
+                        }, expire_delta_minutes=10),
+                        max_age=600, 
+                        httponly=True, 
+                        samesite="strict", 
+                        path="/authentication/oauth_signup/google")
+        return resp
 
     except OAuthError as e:
-        raise HTTPException(status_code=400, detail=f"OAuth error: {e.error}") from e
-    return RedirectResponse(url="/")
+        raise HTTPException(status_code=400, detail=f"OAuth error here: {e.error}") from e
 
 
-@router.post("/oauth_signup")
+
+@router.post("/oauth_signup/google")
 async def oauth_signup(request: Request, data: schema.OAuthSignup, resp: Response, db: AsyncSession = Depends(get_db)):
+    print("OAuth signup called with data:", data)
     token = request.cookies.get("oauth_signup_key")
     if not token:
         raise HTTPException(status_code=401, detail="Missing or expired signup token")
 
     payload = oAuthentication.decode_jwt(token)
+    print(payload)
+
     if payload is None or payload.get("signature") != os.getenv("SIGNATURE"):
+        print("Invalid token signature")
         raise HTTPException(status_code=401, detail="Invalid signup token")
 
     if payload.get("sub") is None or payload.get("email") is None:
+        print("Token missing required fields")
         raise HTTPException(status_code=401, detail="Invalid signup token")
 
     if await db.get(User, data.user_id.lower()):
         raise HTTPException(status_code=400, detail="User ID already exists")
 
     user = User(id=data.user_id.lower(), name=data.name, password=None, email=payload["email"])
+    print("Creating user:", user)
     db.add(user)
     google_user = GoogleUsers(sub=payload["sub"], user_id=user.id)
     db.add(google_user)
 
     try:
-        db.commit()
+        print("Trying to commit to database")
+        await db.commit()
+        print("Commit successful")
     except Exception as e:
-        db.rollback()
+        print("Database error during OAuth signup:", e)
+        await db.rollback()
         raise HTTPException(status_code=500, detail="Database error") from e
 
-    resp.delete_cookie("oauth_signup_key", path="/authentication/oauth_signup")
+    resp.set_cookie("oauth_signup_key", path="/authentication/oauth_signup", max_age=0)
 
-    return await send_login(user.id)
+    return await send_login(user.id, resp)
 
 
 

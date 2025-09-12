@@ -50,7 +50,7 @@ class User(Base):
     id = Column(String, primary_key=True, index=True, nullable = False)
     name = Column(String, nullable = False)
     password = Column(String, nullable = True)  # Nullable for OAuth users
-    email = Column(String, unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
+    email = Column(String(50), unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
 
     messages = relationship("Message", back_populates='user', lazy="selectin")
     # oauth_id = relationship("GoogleUsers", back_populates="user", lazy="selectin")
@@ -83,7 +83,7 @@ async def get_db():
 
 class GoogleUsers(Base):
     __tablename__ = "google_users"
-    sub = Column(BigInteger, unique=True, index=True, nullable = False, primary_key=True)
+    sub = Column(String(25), unique=True, index=True, nullable = False, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"), index=False, nullable = False)
 
     user = relationship("User", lazy="selectin")
