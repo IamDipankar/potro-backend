@@ -114,6 +114,10 @@ async def view_messages_page(request : Request, msg_id : int = None, ):
 async def get_memory_usages():
     return await memory_usages()
 
+@app.get("/Ads.txt")
+async def ads_txt():
+    return FileResponse("pages/ads.txt", media_type="text/plain")
+
 
 @app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
 async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
@@ -126,4 +130,5 @@ async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(g
     else:
         return FileResponse("pages/404.html", status_code=404)
     
+
 
