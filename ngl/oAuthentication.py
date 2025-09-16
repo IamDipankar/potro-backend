@@ -37,7 +37,7 @@ async def create_refresh_token(data : dict):
 async def verify_jwt(token: str, exception: HTTPException, secret_key : str = SECRET_KEY):
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
-        if not payload.get("id") or not payload.get("role"):
+        if not payload.get("id"):
             print("here1")
             raise exception
         return schema.UserID(id=payload['id'])

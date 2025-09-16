@@ -33,25 +33,26 @@ oauth.register(
 templates = Jinja2Templates(directory="pages")
 
 
-async def set_refresh_token_cookie(resp: Response, data: dict) -> Response:
+async def set_refresh_token(resp: Response, data: dict):
+    token = await oAuthentication.create_refresh_token(data)
     resp.set_cookie(
         key="refresh_token",
-        value=await oAuthentication.create_refresh_token(data),
+        value=token,
         max_age=oAuthentication.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,  ### !!! Danger: recheck before production
         secure=True if os.getenv("IS_PRODUCTION") == "True" else False,  ### !!! Danger: recheck before production
         samesite="strict", ### !!! Danger: recheck before production
         path='/authentication/refresh'
     )
-    return resp
+    return token
 
 async def send_login(user_id, resp: Response = None, status_code: int = status.HTTP_202_ACCEPTED):
     data = {
         "id": user_id,
-        "role": "user"
+        # "role": "user"
     }
 
-    resp = await set_refresh_token_cookie(resp, data)
+    refresh_token = await set_refresh_token(resp, data)
     for name, value in resp.headers.items():
         if name.lower() == 'set-cookie':
             print(f"Set-Cookie: {value}")
@@ -61,6 +62,7 @@ async def send_login(user_id, resp: Response = None, status_code: int = status.H
 
     return {
         "access_token": await oAuthentication.create_access_token(data),
+        "refresh_token": refresh_token,
         "token_type": "Bearer"
     }
 ## dropping due to samesite none and not secure
@@ -73,7 +75,7 @@ async def generate_user_id(email: str, db: AsyncSession = Depends(get_db)) -> st
     return base_id
 
 @router.post('/signup', response_model=schema.ShowUserOnly, status_code=status.HTTP_201_CREATED)
-async def create_user(request: schema.Signup, db: AsyncSession = Depends(get_db)):
+async def create_user(request: schema.Signup, response: Response, db: AsyncSession = Depends(get_db)):
     if await db.get(User, request.id.lower()):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User id already exists')
     if request.email and request.email.strip() == "":
@@ -83,8 +85,8 @@ async def create_user(request: schema.Signup, db: AsyncSession = Depends(get_db)
     user = User(id=request.id.lower(), name=request.name, password=Hash.bcrypt(request.password), email=request.email)
     db.add(user)
     await db.commit()
-    await db.refresh(user)
-    return user
+    # await db.refresh(user)
+    return send_login(request.id, response, status_code=status.HTTP_201_CREATED)
 
 
 @router.post('/login', status_code=status.HTTP_202_ACCEPTED)
@@ -93,16 +95,18 @@ async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(),
     user = await db.get(User, request.username.lower())
     if not user or not Hash.verify(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
-
-    return await send_login(user.id, resp)
+    
+    payload = await send_login(user.id, resp)
+    payload["name"] = user.name
+    return payload
 
 @router.post('/refresh')
-async def refresh_token(resp: Response, request: Request, db: AsyncSession = Depends(get_db)):
+async def refresh_token(resp: Response, request: Request, body : schema.RefreshToken, db: AsyncSession = Depends(get_db)):
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Invalid credentials'
     )
-    token = request.cookies.get("refresh_token")
+    token = body.refresh_token or request.cookies.get("refresh_token")
     if not token:
         print("No refresh token cookie")
         print("Cookies are:")
@@ -118,15 +122,15 @@ async def refresh_token(resp: Response, request: Request, db: AsyncSession = Dep
     
     data = {
         "id": user.id,
-        "role": "user"
+        # "role": "user"
     }
 
 
-    resp = await set_refresh_token_cookie(resp, data)
+    refresh_token = await set_refresh_token(resp, data)
 
     return {
         "access_token": await oAuthentication.create_access_token(data),
-        # "refresh_token": await oAuth.create_refresh_token(data),
+        "refresh_token": refresh_token,
         "token_type": "Bearer"
     }
 
@@ -166,12 +170,12 @@ async def google_auth(request: Request, resp: Response, db: AsyncSession = Depen
                     "user_id": user.id
                 })
 
-                await set_refresh_token_cookie(response, {
+                refresh_token = await set_refresh_token(response, {
                         "id": user.id,
-                        "role": "user"
+                        # "role": "user"
                     })
                 
-                return response
+                return response   # TODO: Fix refresh token issue
             else:
                 warnings.warn("Google user linked to non-existent user id, Attempting delete")
                 db.delete(google_login)

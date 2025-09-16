@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..database import *
 from .. import schema, oAuthentication
-from sqlalchemy import update, select, delete
+from sqlalchemy import update, select, delete, func, desc
 
 router = APIRouter(
     prefix="/recieving",
@@ -9,14 +9,57 @@ router = APIRouter(
 )
 
 @router.get('/inbox', response_model=schema.Inbox, status_code=status.HTTP_200_OK)
-async def get_messages_list(current_user: schema.UserID = Depends(oAuthentication.get_current_user), skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    if await db.get(User, current_user.id) is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Cannot find such user')
-    # messages = await db.execute(
-    #     select(Message).where(Message.user_id == user_id).offset(skip).limit(limit)
-    # )
-    messages = await db.get(User, current_user.id)
-    return messages ## updated
+async def get_messages_list(
+    current_user: schema.UserID = Depends(oAuthentication.get_current_user),
+    skip: int | None = None,
+    limit: int = 100,
+    last_seen_id: int | None = None,
+    db: AsyncSession = Depends(get_db)
+):
+    user = await db.get(User, current_user.id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Cannot find such user'
+        )
+
+    # Count total messages for the user
+    total_count = await db.scalar(
+        select(func.count(Message.id)).where(Message.user_id == current_user.id)
+    )
+
+    # Count unread messages
+    unread_count = await db.scalar(
+        select(func.count(Message.id)).where(
+            Message.user_id == current_user.id,
+            Message.unread == True
+        )
+    )
+
+    # Base query
+    query = (
+        select(Message)
+        .where(Message.user_id == current_user.id)
+        .order_by(desc(Message.id))
+        .limit(limit)
+    )
+
+    if skip is not None:  
+        # Use OFFSET-based pagination
+        query = query.offset(skip)
+    elif last_seen_id is not None:  
+        # Use keyset-based pagination
+        query = query.where(Message.id < last_seen_id)
+
+    result = await db.execute(query)
+    messages = result.scalars().all()
+
+    return schema.Inbox(
+        message_count=total_count,
+        unread_count=unread_count,
+        messages=messages
+    )
+
 
 
 @router.get('/get_message/{id}', response_model=schema.Message)
@@ -62,6 +105,16 @@ async def mark_as_unread(id: int, db: AsyncSession = Depends(get_db), current_us
         update(Message)
         .where(Message.id == id, Message.user_id == current_user.id)
         .values(unread=True)
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+@router.patch('/mark_read/{id}', status_code=status.HTTP_204_NO_CONTENT)
+async def mark_as_read(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
+    stmt = (
+        update(Message)
+        .where(Message.id == id, Message.user_id == current_user.id)
+        .values(unread=False)
     )
     await db.execute(stmt)
     await db.commit()

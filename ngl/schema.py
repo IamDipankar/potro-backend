@@ -18,18 +18,32 @@ class MessageInboxItem(BaseModel):
     time : str
     unread : bool
 
+    class Config:
+        from_attributes = True
+
+class MessageItem(BaseModel):
+    id : int
+    time : str
+    unread : bool
+    content : str
+
+    class Config:
+        from_attributes = True
+
 class Inbox(BaseModel):
-    id: str
     message_count : int
     unread_count : int
-    messages: List[MessageInboxItem]
+    messages: List[MessageItem]
+
+    class Config:
+        from_attributes = True
 
 
 class Signup(BaseModel):
     id: str
-    name: str = None
+    name: str | None = None
     password : str
-    email : str = None
+    email : str | None = None
 
 class UserID(BaseModel):
     id : str
@@ -45,7 +59,7 @@ class Message(BaseModel):
     content: str
 
 class RefreshToken(BaseModel):
-    token: str
+    refresh_token: str | None = None
 
 class OAuthSignup(BaseModel):
     user_id: str
