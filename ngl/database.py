@@ -48,7 +48,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(String, primary_key=True, index=True, nullable = False)
-    name = Column(String, nullable = False)
+    name = Column(String, nullable = True)
     password = Column(String, nullable = True)  # Nullable for OAuth users
     email = Column(String(50), unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
 

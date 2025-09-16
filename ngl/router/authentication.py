@@ -39,7 +39,7 @@ async def set_refresh_token_cookie(resp: Response, data: dict) -> Response:
         value=await oAuthentication.create_refresh_token(data),
         max_age=oAuthentication.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,  ### !!! Danger: recheck before production
-        # secure=True,  ### !!! Danger: recheck before production
+        secure=True if os.getenv("IS_PRODUCTION") == "True" else False,  ### !!! Danger: recheck before production
         samesite="strict", ### !!! Danger: recheck before production
         path='/authentication/refresh'
     )
@@ -76,7 +76,11 @@ async def generate_user_id(email: str, db: AsyncSession = Depends(get_db)) -> st
 async def create_user(request: schema.Signup, db: AsyncSession = Depends(get_db)):
     if await db.get(User, request.id.lower()):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User id already exists')
-    user = User(id=request.id.lower(), name=request.name, password=Hash.bcrypt(request.password))
+    if request.email and request.email.strip() == "":
+        request.email = None
+    if request.name and request.name.strip() == "":
+        request.name = None
+    user = User(id=request.id.lower(), name=request.name, password=Hash.bcrypt(request.password), email=request.email)
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -193,6 +197,7 @@ async def google_auth(request: Request, resp: Response, db: AsyncSession = Depen
                         }, expire_delta_minutes=10),
                         max_age=600, 
                         httponly=True, 
+                        secure=True if os.getenv("IS_PRODUCTION") == "True" else False,
                         samesite="strict", 
                         path="/authentication/oauth_signup/google")
         return resp

@@ -27,8 +27,9 @@ class Inbox(BaseModel):
 
 class Signup(BaseModel):
     id: str
-    name: str
+    name: str = None
     password : str
+    email : str = None
 
 class UserID(BaseModel):
     id : str
