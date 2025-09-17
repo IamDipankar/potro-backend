@@ -14,7 +14,7 @@ DATABASE_PORT = os.getenv("DATABASE_PORT")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-IS_INTERNAL = os.getenv("IS_INTERNAL", "False").lower() == "True"
+IS_INTERNAL = os.getenv("IS_INTERNAL", "False") == "True"
 # URL encode the password to handle special characters
 encoded_password = quote_plus(DATABASE_PASSWORD)
 
