@@ -54,17 +54,7 @@ class User(Base):
     email = Column(String(50), unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
 
     messages = relationship("Message", back_populates='user', lazy="selectin")
-    # oauth_id = relationship("GoogleUsers", back_populates="user", lazy="selectin")
-    @property
-    def message_count(self):
-        return len(self.messages) if self.messages else 0
     
-    @property
-    def unread_count(self):
-        if self.messages:
-            return sum(1 for message in self.messages if message.unread)
-        return 0
-
 
 
 class Message(Base):
