@@ -31,7 +31,7 @@ app = FastAPI(
     openapi_url="/SobaiBolo-openapi.json"    # Disable OpenAPI schema (/openapi.json)
 )
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
+# app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
 
 templates = Jinja2Templates(directory="pages")
 
