@@ -3,7 +3,7 @@ from locust import FastHttpUser, task, constant
 
 class MyUser(FastHttpUser):
     wait_time = constant(0)  # no think time, push max load
-    host = "https://potro-backend-1.onrender.com"  # set here so UI host is optional
+    host = "https://potro-messaging.onrender.com"  # set here so UI host is optional
 
     # @task
     # def health(self):

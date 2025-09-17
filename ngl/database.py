@@ -14,7 +14,7 @@ DATABASE_PORT = os.getenv("DATABASE_PORT")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-
+IS_INTERNAL = os.getenv("IS_INTERNAL", "False").lower() == "True"
 # URL encode the password to handle special characters
 encoded_password = quote_plus(DATABASE_PASSWORD)
 
@@ -28,7 +28,7 @@ engine = create_async_engine(
     echo = False,
     # SSL configuration for Render PostgreSQL
     connect_args={
-        "ssl": True ## Danger / revise
+        "ssl": True if not IS_INTERNAL else "require"
     },
     # Connection pool settings for remote database
     pool_size=10,
