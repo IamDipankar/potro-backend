@@ -24,15 +24,16 @@ DATABASE_URL = f"postgresql+asyncpg://{DATABASE_USER}:{encoded_password}@{DATABA
 # Engine configuration for remote PostgreSQL (like Render)
 engine = create_async_engine(
     DATABASE_URL, 
-    echo=True,
+    # echo=True, ## Danger / revise
+    echo = False,
     # SSL configuration for Render PostgreSQL
     connect_args={
-        "ssl": "require"
+        "ssl": True ## Danger / revise
     },
     # Connection pool settings for remote database
     pool_size=10,
     max_overflow=20,
-    pool_pre_ping=True,  # Validate connections before use
+    pool_pre_ping=False,  # Validate connections before use  ## Danger / revise
     pool_recycle=3600,   # Recycle connections every hour
 )
 
