@@ -17,7 +17,6 @@ class MyUser(FastHttpUser):
             params={
                 "message": "The name of our country is Bangladesh. it is an independent country"
             },
-            json={},  # optional, empty JSON body
             name="/sending/dipankar01"
         )
 

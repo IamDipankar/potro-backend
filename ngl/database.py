@@ -28,11 +28,11 @@ engine = create_async_engine(
     echo = False,
     # SSL configuration for Render PostgreSQL
     connect_args={
-        "ssl": True if not IS_INTERNAL else "require"
+        "ssl": "require"
     },
     # Connection pool settings for remote database
-    pool_size=10,
-    max_overflow=20,
+    pool_size=80,
+    max_overflow=0,
     pool_pre_ping=False,  # Validate connections before use  ## Danger / revise
     pool_recycle=3600,   # Recycle connections every hour
 )

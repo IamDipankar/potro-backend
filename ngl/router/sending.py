@@ -22,14 +22,14 @@ async def get_user(user_id: str, db: AsyncSession = Depends(get_db)):
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
 
-@router.post('/{user_id}', status_code=status.HTTP_201_CREATED, response_model=schema.ShortCommunication)
-async def add_message(request: Request, user_id: str, message: str, db: AsyncSession = Depends(get_db)):
+@router.post('/{user_id}', status_code=status.HTTP_201_CREATED)
+async def add_message(user_id: str, message: str, db: AsyncSession = Depends(get_db)):
     # Getting ip address
-    x_forwarded_for = request.headers.get("X-Forwarded-For")
-    if x_forwarded_for:
-        client_ip = x_forwarded_for.split(",")[0]  # first IP is real client
-    else:
-        client_ip = request.client.host
+    # x_forwarded_for = request.headers.get("X-Forwarded-For")
+    # if x_forwarded_for:
+    #     client_ip = x_forwarded_for.split(",")[0]  # first IP is real client
+    # else:
+    #     client_ip = request.client.host
 
     
     user_id = user_id.lower()
