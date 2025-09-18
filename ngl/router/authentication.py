@@ -36,15 +36,15 @@ templates = Jinja2Templates(directory="pages")
 
 async def set_refresh_token(resp: Response, data: dict):
     token = await oAuthentication.create_refresh_token(data)
-    resp.set_cookie(
-        key="refresh_token",
-        value=token,
-        max_age=oAuthentication.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
-        httponly=True,  ### !!! Danger: recheck before production
-        secure=True if os.getenv("IS_PRODUCTION") == "True" else False,  ### !!! Danger: recheck before production
-        samesite="strict", ### !!! Danger: recheck before production
-        path='/authentication/refresh'
-    )
+    # resp.set_cookie(
+    #     key="refresh_token",
+    #     value=token,
+    #     max_age=oAuthentication.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+    #     httponly=True,  ### !!! Danger: recheck before production
+    #     secure=True if os.getenv("IS_PRODUCTION") == "True" else False,  ### !!! Danger: recheck before production
+    #     samesite="strict", ### !!! Danger: recheck before production
+    #     path='/authentication/refresh'
+    # )
     return token
 
 async def send_login(user_id, resp: Response = None, status_code: int = status.HTTP_202_ACCEPTED):
