@@ -64,3 +64,7 @@ class RefreshToken(BaseModel):
 class OAuthSignup(BaseModel):
     user_id: str
     name: str
+
+class Password(BaseModel):
+    user_id: str
+    password: str

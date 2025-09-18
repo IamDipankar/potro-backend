@@ -7,7 +7,7 @@ from . import router, schema
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 from . import oAuthentication
-from starlette.middleware.sessions import SessionMiddleware
+# from starlette.middleware.sessions import SessionMiddleware
 
 from pathlib import Path
 

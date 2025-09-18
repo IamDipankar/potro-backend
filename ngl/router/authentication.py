@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 import dotenv
 import warnings
 import time
+from ..oAuthentication import get_current_user
 
 dotenv.load_dotenv()
 
@@ -74,7 +75,7 @@ async def generate_user_id(email: str, db: AsyncSession = Depends(get_db)) -> st
     
     return base_id
 
-@router.post('/signup', response_model=schema.ShowUserOnly, status_code=status.HTTP_201_CREATED)
+@router.post('/signup', status_code=status.HTTP_201_CREATED)
 async def create_user(request: schema.Signup, response: Response, db: AsyncSession = Depends(get_db)):
     if await db.get(User, request.id.lower()):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User id already exists')
@@ -86,7 +87,7 @@ async def create_user(request: schema.Signup, response: Response, db: AsyncSessi
     db.add(user)
     await db.commit()
     # await db.refresh(user)
-    return send_login(request.id, response, status_code=status.HTTP_201_CREATED)
+    return await send_login(request.id, response, status_code=status.HTTP_201_CREATED)
 
 
 @router.post('/login', status_code=status.HTTP_202_ACCEPTED)
@@ -252,8 +253,26 @@ async def oauth_signup(request: Request, data: schema.OAuthSignup, resp: Respons
     return await send_login(user.id, resp)
 
 
+@router.delete('/delete_account', status_code=status.HTTP_202_ACCEPTED)
+async def delete_account(body : schema.Password, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    current_user.id = current_user.id.lower()
+    if current_user.id != body.user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    current_user = await db.get(User, current_user.id)
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id doesn't exists")
+    
+    if not Hash.verify(body.password, current_user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    await db.delete(current_user)
+    await db.commit() ## TODO: delete messages too
 
-
+    return {"detail": "User deleted"}
 
 
 
