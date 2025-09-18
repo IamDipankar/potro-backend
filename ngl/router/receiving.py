@@ -41,8 +41,10 @@ async def get_messages_list(
         select(Message)
         .where(Message.user_id == current_user.id)
         .order_by(desc(Message.id))
-        .limit(limit)
     )
+
+    if limit > 0:
+        query = query.limit(limit)
 
     if skip is not None:  
         # Use OFFSET-based pagination
