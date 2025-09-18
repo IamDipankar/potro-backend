@@ -98,7 +98,7 @@ async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(),
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     
     payload = await send_login(user.id, resp)
-    payload["name"] = user.name
+    payload["username"] = user.name
     return payload
 
 @router.post('/refresh')
