@@ -57,6 +57,7 @@ class FullMessage(BaseModel):
 class Message(BaseModel):
     time: str
     content: str
+    unread: bool
 
 class RefreshToken(BaseModel):
     refresh_token: str | None = None
