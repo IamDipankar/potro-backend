@@ -8,11 +8,12 @@ from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 from . import oAuthentication
 # from starlette.middleware.sessions import SessionMiddleware
+import firebase_admin as fbad
 
 from pathlib import Path
 
-
-import psutil
+cred = fbad.credentials.Certificate("serviceAccountKey.json")
+fbad.initialize_app(cred)
 
 
 @asynccontextmanager

@@ -83,22 +83,28 @@ async def create_user(request: schema.Signup, response: Response, db: AsyncSessi
         request.email = None
     if request.name and request.name.strip() == "":
         request.name = None
-    user = User(id=request.id.lower(), name=request.name, password=Hash.bcrypt(request.password), email=request.email)
+    user = User(id=request.id.lower(), name=request.name, password=Hash.bcrypt(request.password), email=request.email, fcm_tokens = [request.fcm_token] if request.fcm_token else None)
     db.add(user)
     await db.commit()
     # await db.refresh(user)
     return await send_login(request.id, response, status_code=status.HTTP_201_CREATED)
 
 
-@router.post('/login', status_code=status.HTTP_202_ACCEPTED)
-async def login(resp : Response, request: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+@router.patch('/login', status_code=status.HTTP_202_ACCEPTED)
+async def login(resp : Response, request: schema.Login , db: AsyncSession = Depends(get_db)):
     print("Login called")
-    user = await db.get(User, request.username.lower())
+    user = await db.get(User, request.user_id.lower())
     if not user or not Hash.verify(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     
     payload = await send_login(user.id, resp)
     payload["username"] = user.name
+    if fcm_token := request.fcm_token:
+        if user.fcm_tokens is None:
+            user.fcm_tokens = [fcm_token]
+        elif fcm_token not in user.fcm_tokens:
+            user.fcm_tokens = user.fcm_tokens + [fcm_token]
+        await db.commit()
     return payload
 
 @router.post('/refresh')
@@ -254,7 +260,7 @@ async def oauth_signup(request: Request, data: schema.OAuthSignup, resp: Respons
 
 
 @router.delete('/delete_account', status_code=status.HTTP_202_ACCEPTED)
-async def delete_account(body : schema.Password, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_account(body : schema.Login, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     
@@ -274,6 +280,20 @@ async def delete_account(body : schema.Password, current_user: User = Depends(ge
 
     return {"detail": "User deleted"}
 
+@router.patch('/logout', status_code=status.HTTP_202_ACCEPTED)
+async def logout(data : schema.Logout, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    current_user = await db.get(User, current_user.id)
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id doesn't exists")
+
+    if token := data.fcm_token and current_user.fcm_tokens:
+        current_user.fcm_tokens = [t for t in (current_user.fcm_tokens) if t != token]
+        await db.commit()
+        return {"detail": "Logged out"}
+    return {"detail": "No token to logout"}
 
 
 

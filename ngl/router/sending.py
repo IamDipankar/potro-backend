@@ -4,6 +4,9 @@ from datetime import datetime
 from .. import schema
 from fastapi.responses import FileResponse
 import requests
+import firebase_admin as fbad
+import asyncio
+from firebase_admin import messaging
 
 router = APIRouter(
     prefix="/sending",
@@ -33,10 +36,31 @@ async def add_message(user_id: str, message: str, db: AsyncSession = Depends(get
 
     
     user_id = user_id.lower()
-    if await db.get(User, user_id) is None:
+    user = await db.get(User, user_id)
+    if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User does not exist')
     current_time = datetime.now().isoformat()
     message = Message(user_id=user_id, content=message, time=current_time)
     db.add(message)
     await db.commit()
+    db.refresh(message)
+
+    if user.fcm_tokens:
+        message = messaging.MulticastMessage(
+            data={
+                "id": str(message.id),
+                "time": str(current_time),
+                "content": message.content,
+            },
+            notification = messaging.Notification(
+                title = "New Message"
+            ),
+            tokens = user.fcm_tokens
+        )
+
+        response = await messaging.send_each_for_multicast_async(message)
+        if response.failure_count > 0:
+            user.fcm_tokens = [token for resp, token in zip(response.responses, user.fcm_tokens) if resp.success]
+    await db.commit()
+
     return {'detail': 'Success'}

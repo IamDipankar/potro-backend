@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Column, String, Integer, Boolean, BigInteger, select
+from sqlalchemy import ForeignKey, Column, String, Integer, Boolean, BigInteger, select, ARRAY
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 import os
@@ -28,7 +28,7 @@ engine = create_async_engine(
     echo = False,
     # SSL configuration for Render PostgreSQL
     connect_args={
-        "ssl": "require"
+        "ssl": "require" if IS_INTERNAL else True
     },
     # Connection pool settings for remote database
     pool_size=80,
@@ -52,8 +52,9 @@ class User(Base):
     name = Column(String, nullable = True)
     password = Column(String, nullable = True)  # Nullable for OAuth users
     email = Column(String(50), unique=True, index=False, nullable = True)  # Nullable for non-OAuth users
+    fcm_tokens = Column(ARRAY(String), nullable = True)  # List of FCM tokens for the user
 
-    messages = relationship("Message", back_populates='user', lazy="selectin")
+    # messages = relationship("Message", back_populates='user', lazy="selectin")
     
 
 
@@ -65,7 +66,7 @@ class Message(Base):
     time = Column(String, nullable = False)
     unread = Column(Boolean, default=True)  # True for unread, False for read
 
-    user = relationship("User", back_populates='messages', lazy="selectin")
+    # user = relationship("User", back_populates='messages', lazy="selectin")
 
 async def get_db():
     async with AsyncSessionLocal() as db:

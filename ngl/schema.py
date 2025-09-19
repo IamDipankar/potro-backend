@@ -44,6 +44,7 @@ class Signup(BaseModel):
     name: str | None = None
     password : str
     email : str | None = None
+    fcm_token: str | None = None
 
 class UserID(BaseModel):
     id : str
@@ -66,6 +67,10 @@ class OAuthSignup(BaseModel):
     user_id: str
     name: str
 
-class Password(BaseModel):
+class Login(BaseModel):
     user_id: str
     password: str
+    fcm_token: str | None = None
+
+class Logout(BaseModel):
+    fcm_token: str | None = None
