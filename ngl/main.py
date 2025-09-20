@@ -120,16 +120,16 @@ async def ads_txt():
     return FileResponse("pages/ads.txt", media_type="text/plain")
 
 
-# @app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
-# async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
-#     user = await db.get(User, user_id.lower())
-#     if user:
-#         return templates.TemplateResponse("send.html", {
-#                 "request": request,
-#                 "user_id": user_id.strip()
-#             })
-#     else:
-#         return FileResponse("pages/404.html", status_code=404)
+@app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
+async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
+    user = await db.get(User, user_id.lower())
+    if user:
+        return templates.TemplateResponse("send.html", {
+                "request": request,
+                "user_id": user_id.strip()
+            })
+    else:
+        return FileResponse("pages/404.html", status_code=404)
     
 
 
