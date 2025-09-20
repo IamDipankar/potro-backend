@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import *
 from . import router, schema
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from . import oAuthentication
 # from starlette.middleware.sessions import SessionMiddleware
@@ -80,36 +80,36 @@ async def memory_usages():
 # )
 
 
-@app.get("/", tags=["root"], response_model=schema.CommunicationMessage)
+@app.get("/", tags=["root"], status_code=status.HTTP_200_OK)
 async def index():
-    return FileResponse("pages/index.html")
+    return
 
-@app.get("/health")
+@app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
-    return {"detail": "Welcome to the messaging API"}
+    return
 
 app.include_router(router.sending.router)
 app.include_router(router.authentication.router)
 
 app.include_router(router.receiving.router)
 
-@app.get("/signup")
-async def signup_page():
-    return FileResponse("pages/signup.html")
+# @app.get("/signup")
+# async def signup_page():
+#     return FileResponse("pages/signup.html")
 
-@app.get("/login")
-async def login_page():
-    return FileResponse("pages/login.html")
+# @app.get("/login")
+# async def login_page():
+#     return FileResponse("pages/login.html")
 
-@app.get("/inbox")
-async def view_messages_page(request : Request, msg_id : int = None, ):
-    if not msg_id:
-        return FileResponse("pages/inbox.html")
-    else:
-        return templates.TemplateResponse("view-message.html", {
-                "request": request,
-                "msg_id": msg_id
-            })
+# @app.get("/inbox")
+# async def view_messages_page(request : Request, msg_id : int = None, ):
+#     if not msg_id:
+#         return FileResponse("pages/inbox.html")
+#     else:
+#         return templates.TemplateResponse("view-message.html", {
+#                 "request": request,
+#                 "msg_id": msg_id
+#             })
 
 @app.get("/memory-usages")
 async def get_memory_usages():
@@ -120,16 +120,16 @@ async def ads_txt():
     return FileResponse("pages/ads.txt", media_type="text/plain")
 
 
-@app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
-async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
-    user = await db.get(User, user_id.lower())
-    if user:
-        return templates.TemplateResponse("send.html", {
-                "request": request,
-                "user_id": user_id.strip()
-            })
-    else:
-        return FileResponse("pages/404.html", status_code=404)
+# @app.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
+# async def get_user(user_id: str, request : Request, db: AsyncSession = Depends(get_db)):
+#     user = await db.get(User, user_id.lower())
+#     if user:
+#         return templates.TemplateResponse("send.html", {
+#                 "request": request,
+#                 "user_id": user_id.strip()
+#             })
+#     else:
+#         return FileResponse("pages/404.html", status_code=404)
     
 
 

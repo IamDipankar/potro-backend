@@ -92,7 +92,7 @@ async def get_message(id: int, db: AsyncSession = Depends(get_db), current_user:
     await db.commit()
     return row
 
-@router.delete('/delete_message/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/delete_message/{id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
     stmt = (
         delete(Message)
@@ -100,8 +100,9 @@ async def delete_message(id: int, db: AsyncSession = Depends(get_db), current_us
     )
     await db.execute(stmt)
     await db.commit()
+    return
 
-@router.patch('/mark_unread/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.patch('/mark_unread/{id}', status_code=status.HTTP_202_ACCEPTED)
 async def mark_as_unread(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
     stmt = (
         update(Message)
@@ -110,8 +111,9 @@ async def mark_as_unread(id: int, db: AsyncSession = Depends(get_db), current_us
     )
     await db.execute(stmt)
     await db.commit()
+    return
 
-@router.patch('/mark_read/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@router.patch('/mark_read/{id}', status_code=status.HTTP_202_ACCEPTED)
 async def mark_as_read(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
     stmt = (
         update(Message)
@@ -120,3 +122,4 @@ async def mark_as_read(id: int, db: AsyncSession = Depends(get_db), current_user
     )
     await db.execute(stmt)
     await db.commit()
+    return

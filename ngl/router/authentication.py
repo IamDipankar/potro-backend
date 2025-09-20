@@ -107,8 +107,8 @@ async def login(resp : Response, request: schema.Login , db: AsyncSession = Depe
         await db.commit()
     return payload
 
-@router.post('/refresh')
-async def refresh_token(resp: Response, request: Request, body : schema.RefreshToken, db: AsyncSession = Depends(get_db)):
+@router.post('/refresh', status_code=status.HTTP_200_OK)
+async def refresh_token(resp: Response, request: Request, body: schema.RefreshToken, db: AsyncSession = Depends(get_db)):
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Invalid credentials'
@@ -141,122 +141,122 @@ async def refresh_token(resp: Response, request: Request, body : schema.RefreshT
         "token_type": "Bearer"
     }
 
-@router.get("/login/google")
-async def google_login(request: Request):
-    redirect_uri = request.url_for("google_auth")
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+# @router.get("/login/google")
+# async def google_login(request: Request):
+#     redirect_uri = request.url_for("google_auth")
+#     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@router.get("/callback/google")
-async def google_auth(request: Request, resp: Response, db: AsyncSession = Depends(get_db)):
-    try:
-        token = await oauth.google.authorize_access_token(request)
-        userinfo = token.get("userinfo")
-        if not userinfo:
-            userinfo = await oauth.google.parse_id_token(request, token)
-        if not userinfo:
-            raise HTTPException(status_code=400, detail="Failed to obtain user info")
-        print("Google user info:", userinfo)
-        safe = userinfo.get("email_verified", False) and userinfo.get("aud") == os.getenv("GOOGLE_CLIENT_ID") and userinfo.get("iss") in ['https://accounts.google.com', 'accounts.google.com'] and userinfo.get("exp", 0) > int(time.time())
-        if not safe:
-            raise HTTPException(status_code=400, detail="Unsafe Google login attempt")
+# @router.get("/callback/google")
+# async def google_auth(request: Request, resp: Response, db: AsyncSession = Depends(get_db)):
+#     try:
+#         token = await oauth.google.authorize_access_token(request)
+#         userinfo = token.get("userinfo")
+#         if not userinfo:
+#             userinfo = await oauth.google.parse_id_token(request, token)
+#         if not userinfo:
+#             raise HTTPException(status_code=400, detail="Failed to obtain user info")
+#         print("Google user info:", userinfo)
+#         safe = userinfo.get("email_verified", False) and userinfo.get("aud") == os.getenv("GOOGLE_CLIENT_ID") and userinfo.get("iss") in ['https://accounts.google.com', 'accounts.google.com'] and userinfo.get("exp", 0) > int(time.time())
+#         if not safe:
+#             raise HTTPException(status_code=400, detail="Unsafe Google login attempt")
         
-        # Check if user with this Google sub exists
-        google_login = await db.execute(
-            select(GoogleUsers).where(GoogleUsers.sub == str(userinfo["sub"]))
-        )
+#         # Check if user with this Google sub exists
+#         google_login = await db.execute(
+#             select(GoogleUsers).where(GoogleUsers.sub == str(userinfo["sub"]))
+#         )
 
-        google_login = google_login.scalars().first()
-        if google_login:
-            user = await db.get(User, google_login.user_id)
-            if user:
-                data = await send_login(user.id, resp)
-                response = templates.TemplateResponse("loginskeleton.html", {
-                    "request": request,
-                    "access_token": data["access_token"],
-                    "token_type": data["token_type"],
-                    "user_id": user.id
-                })
+#         google_login = google_login.scalars().first()
+#         if google_login:
+#             user = await db.get(User, google_login.user_id)
+#             if user:
+#                 data = await send_login(user.id, resp)
+#                 response = templates.TemplateResponse("loginskeleton.html", {
+#                     "request": request,
+#                     "access_token": data["access_token"],
+#                     "token_type": data["token_type"],
+#                     "user_id": user.id
+#                 })
 
-                refresh_token = await set_refresh_token(response, {
-                        "id": user.id,
-                        # "role": "user"
-                    })
+#                 refresh_token = await set_refresh_token(response, {
+#                         "id": user.id,
+#                         # "role": "user"
+#                     })
                 
-                return response   # TODO: Fix refresh token issue
-            else:
-                warnings.warn("Google user linked to non-existent user id, Attempting delete")
-                db.delete(google_login)
-                await db.commit()
+#                 return response   # TODO: Fix refresh token issue
+#             else:
+#                 warnings.warn("Google user linked to non-existent user id, Attempting delete")
+#                 db.delete(google_login)
+#                 await db.commit()
     
-        name = userinfo.get("name")
-        email = userinfo.get("email")
-        suggested_id = await generate_user_id(userinfo["email"], db)
+#         name = userinfo.get("name")
+#         email = userinfo.get("email")
+#         suggested_id = await generate_user_id(userinfo["email"], db)
         
 
-        resp = templates.TemplateResponse("oauthSignup.html", {
-                                                "request": request,
-                                                "name": name,
-                                                "suggested_id": suggested_id,
-                                                "medium": "google"
-                                                })
+#         resp = templates.TemplateResponse("oauthSignup.html", {
+#                                                 "request": request,
+#                                                 "name": name,
+#                                                 "suggested_id": suggested_id,
+#                                                 "medium": "google"
+#                                                 })
         
-        resp.set_cookie(key="oauth_signup_key",
-                        value=await oAuthentication.create_access_token({
-                                "signature": os.getenv("SIGNATURE"),
-                                "sub": userinfo["sub"],
-                                "email": email,
-                        }, expire_delta_minutes=10),
-                        max_age=600, 
-                        httponly=True, 
-                        secure=True if os.getenv("IS_PRODUCTION") == "True" else False,
-                        samesite="strict", 
-                        path="/authentication/oauth_signup/google")
-        return resp
+#         resp.set_cookie(key="oauth_signup_key",
+#                         value=await oAuthentication.create_access_token({
+#                                 "signature": os.getenv("SIGNATURE"),
+#                                 "sub": userinfo["sub"],
+#                                 "email": email,
+#                         }, expire_delta_minutes=10),
+#                         max_age=600, 
+#                         httponly=True, 
+#                         secure=True if os.getenv("IS_PRODUCTION") == "True" else False,
+#                         samesite="strict", 
+#                         path="/authentication/oauth_signup/google")
+#         return resp
 
-    except OAuthError as e:
-        raise HTTPException(status_code=400, detail=f"OAuth error here: {e.error}") from e
+#     except OAuthError as e:
+#         raise HTTPException(status_code=400, detail=f"OAuth error here: {e.error}") from e
 
 
 
-@router.post("/oauth_signup/google")
-async def oauth_signup(request: Request, data: schema.OAuthSignup, resp: Response, db: AsyncSession = Depends(get_db)):
-    print("OAuth signup called with data:", data)
-    token = request.cookies.get("oauth_signup_key")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing or expired signup token")
+# @router.post("/oauth_signup/google")
+# async def oauth_signup(request: Request, data: schema.OAuthSignup, resp: Response, db: AsyncSession = Depends(get_db)):
+#     print("OAuth signup called with data:", data)
+#     token = request.cookies.get("oauth_signup_key")
+#     if not token:
+#         raise HTTPException(status_code=401, detail="Missing or expired signup token")
 
-    payload = oAuthentication.decode_jwt(token)
-    print(payload)
+#     payload = oAuthentication.decode_jwt(token)
+#     print(payload)
 
-    if payload is None or payload.get("signature") != os.getenv("SIGNATURE"):
-        print("Invalid token signature")
-        raise HTTPException(status_code=401, detail="Invalid signup token")
+#     if payload is None or payload.get("signature") != os.getenv("SIGNATURE"):
+#         print("Invalid token signature")
+#         raise HTTPException(status_code=401, detail="Invalid signup token")
 
-    if payload.get("sub") is None or payload.get("email") is None:
-        print("Token missing required fields")
-        raise HTTPException(status_code=401, detail="Invalid signup token")
+#     if payload.get("sub") is None or payload.get("email") is None:
+#         print("Token missing required fields")
+#         raise HTTPException(status_code=401, detail="Invalid signup token")
 
-    if await db.get(User, data.user_id.lower()):
-        raise HTTPException(status_code=400, detail="User ID already exists")
+#     if await db.get(User, data.user_id.lower()):
+#         raise HTTPException(status_code=400, detail="User ID already exists")
 
-    user = User(id=data.user_id.lower(), name=data.name, password=None, email=payload["email"])
-    print("Creating user:", user)
-    db.add(user)
-    google_user = GoogleUsers(sub=payload["sub"], user_id=user.id)
-    db.add(google_user)
+#     user = User(id=data.user_id.lower(), name=data.name, password=None, email=payload["email"])
+#     print("Creating user:", user)
+#     db.add(user)
+#     google_user = GoogleUsers(sub=payload["sub"], user_id=user.id)
+#     db.add(google_user)
 
-    try:
-        print("Trying to commit to database")
-        await db.commit()
-        print("Commit successful")
-    except Exception as e:
-        print("Database error during OAuth signup:", e)
-        await db.rollback()
-        raise HTTPException(status_code=500, detail="Database error") from e
+#     try:
+#         print("Trying to commit to database")
+#         await db.commit()
+#         print("Commit successful")
+#     except Exception as e:
+#         print("Database error during OAuth signup:", e)
+#         await db.rollback()
+#         raise HTTPException(status_code=500, detail="Database error") from e
 
-    resp.set_cookie("oauth_signup_key", path="/authentication/oauth_signup", max_age=0)
+#     resp.set_cookie("oauth_signup_key", path="/authentication/oauth_signup", max_age=0)
 
-    return await send_login(user.id, resp)
+#     return await send_login(user.id, resp)
 
 
 @router.delete('/delete_account', status_code=status.HTTP_202_ACCEPTED)
@@ -292,8 +292,23 @@ async def logout(data : schema.Logout, current_user: User = Depends(get_current_
     if token := data.fcm_token and current_user.fcm_tokens:
         current_user.fcm_tokens = [t for t in (current_user.fcm_tokens) if t != token]
         await db.commit()
-        return {"detail": "Logged out"}
-    return {"detail": "No token to logout"}
+        return {"token": "removed"}
+    if not data.fcm_token or data.fcm_token.strip() == "":
+        return {"token": "not necessary"}
+    return {"token": "not found", "alert": "Token not found"}
+
+@router.patch('/update_fcm_token', status_code=status.HTTP_202_ACCEPTED)
+async def update_fcm_token(data: schema.UpdateFCMToken, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    current_user = await db.get(User, current_user.id)
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id doesn't exists")
+    
+    if data.previous_token not in (current_user.fcm_tokens or []):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Previous token not found")
+    current_user.fcm_tokens = [t if t != data.previous_token else data.new_token for t in (current_user.fcm_tokens or [])]
+    db.commit()
 
 
 

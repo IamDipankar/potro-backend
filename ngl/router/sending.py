@@ -13,11 +13,11 @@ router = APIRouter(
     tags=['Sending']
 )
 
-@router.get("/")
-async def send_page():
-    return FileResponse("pages/send.html")
+# @router.get("/")
+# async def send_page():
+#     return FileResponse("pages/send.html")
 
-@router.get('/{user_id}', status_code=status.HTTP_200_OK, response_model=schema.ShowUserOnly)
+@router.get('/{user_id}', status_code=status.HTTP_302_FOUND, response_model=schema.ShowUserOnly)
 async def get_user(user_id: str, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, user_id.lower())
     if user:
@@ -25,7 +25,7 @@ async def get_user(user_id: str, db: AsyncSession = Depends(get_db)):
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User does not exist')
 
-@router.post('/{user_id}', status_code=status.HTTP_201_CREATED)
+@router.post('/{user_id}', status_code=status.HTTP_202_ACCEPTED)
 async def add_message(user_id: str, message: str, db: AsyncSession = Depends(get_db)):
     # Getting ip address
     # x_forwarded_for = request.headers.get("X-Forwarded-For")
@@ -63,4 +63,4 @@ async def add_message(user_id: str, message: str, db: AsyncSession = Depends(get
             user.fcm_tokens = [token for resp, token in zip(response.responses, user.fcm_tokens) if resp.success]
     await db.commit()
 
-    return {'detail': 'Success'}
+    return

@@ -74,3 +74,8 @@ class Login(BaseModel):
 
 class Logout(BaseModel):
     fcm_token: str | None = None
+
+
+class UpdateFCMToken(BaseModel):
+    previous_token: str
+    new_token: str
