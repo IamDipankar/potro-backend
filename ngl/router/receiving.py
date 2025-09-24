@@ -64,33 +64,33 @@ async def get_messages_list(
 
 
 
-@router.get('/get_message/{id}', response_model=schema.Message)
-async def get_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
-    # Atomically mark as read and return the row
-    stmt = (
-        update(Message)
-        .where(Message.id == id, Message.user_id == current_user.id)
-        # Only write if it was unread; avoids needless writes
-        .where(Message.unread.is_(True))
-        .values(unread=False)
-        .returning(Message)
-    )
-    res = await db.execute(stmt)
-    row = res.scalar_one_or_none()
+# @router.get('/get_message/{id}', response_model=schema.Message)
+# async def get_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):
+#     # Atomically mark as read and return the row
+#     stmt = (
+#         update(Message)
+#         .where(Message.id == id, Message.user_id == current_user.id)
+#         # Only write if it was unread; avoids needless writes
+#         .where(Message.unread.is_(True))
+#         .values(unread=False)
+#         .returning(Message)
+#     )
+#     res = await db.execute(stmt)
+#     row = res.scalar_one_or_none()
 
-    if row is None:
-        # Could be: not found, not owned, or already read.
-        # If you want to still return the message even if already read:
-        # do a SELECT fallback.
-        sel = select(Message).where(
-            Message.id == id, Message.user_id == current_user.id
-        )
-        row = (await db.execute(sel)).scalar_one_or_none()
-        if row is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+#     if row is None:
+#         # Could be: not found, not owned, or already read.
+#         # If you want to still return the message even if already read:
+#         # do a SELECT fallback.
+#         sel = select(Message).where(
+#             Message.id == id, Message.user_id == current_user.id
+#         )
+#         row = (await db.execute(sel)).scalar_one_or_none()
+#         if row is None:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
         
-    await db.commit()
-    return row
+#     await db.commit()
+#     return row  ## TODO: revise
 
 @router.delete('/delete_message/{id}', status_code=status.HTTP_202_ACCEPTED)
 async def delete_message(id: int, db: AsyncSession = Depends(get_db), current_user: schema.UserID = Depends(oAuthentication.get_current_user)):

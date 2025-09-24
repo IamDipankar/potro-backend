@@ -289,8 +289,13 @@ async def logout(data : schema.Logout, current_user: User = Depends(get_current_
     if not current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id doesn't exists")
 
-    if token := data.fcm_token and current_user.fcm_tokens:
+    if (token := data.fcm_token) and current_user.fcm_tokens:
+        if token not in current_user.fcm_tokens:
+            return {"token": "not found", "alert": "The provided token was not in the database"}
+        print("The token is : ", token)
+        print(current_user.fcm_tokens)
         current_user.fcm_tokens = [t for t in (current_user.fcm_tokens) if t != token]
+        print("After removal:", current_user.fcm_tokens)
         await db.commit()
         return {"token": "removed"}
     if not data.fcm_token or data.fcm_token.strip() == "":
