@@ -1,5 +1,5 @@
 from fastapi import FastAPI, status, HTTPException, Depends, Request, Response
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import *
@@ -11,6 +11,28 @@ from . import oAuthentication
 import firebase_admin as fbad
 
 from pathlib import Path
+import logging
+
+from .loop_watchdog import loop_watchdog
+import asyncio
+from .timer import *
+
+
+# -------------------------
+# LOGGING: always visible
+# -------------------------
+logging.basicConfig(
+    level=logging.INFO,  # ensure INFO shows
+    format=" [%(name)s] %(message)s \n"
+)
+
+checkpoint_logger = logging.getLogger("checkpoint")
+if not checkpoint_logger.handlers:
+    h = logging.StreamHandler()  # stdout/stderr
+    h.setFormatter(logging.Formatter(" [%(name)s] %(message)s \n"))
+    checkpoint_logger.addHandler(h)
+checkpoint_logger.setLevel(logging.INFO)
+checkpoint_logger.propagate = False  # avoid double logs
 
 cred = fbad.credentials.Certificate("serviceAccountKey.json")
 fbad.initialize_app(cred)
@@ -18,11 +40,35 @@ fbad.initialize_app(cred)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables
+    """
+    - Startup:
+        * ensure DB tables exist
+        * start loop watchdog
+    - Shutdown:
+        * stop loop watchdog
+    """
+    # Start watchdog first so we can see any long startup steps as lag:
+    loop = asyncio.get_running_loop()
+    try:
+        loop.set_debug(True)
+        loop.slow_callback_duration = 0.05  # 50ms
+    except Exception:
+        pass
+    watchdog_task = loop.create_task(loop_watchdog(period_ms=20, warn_ms=100))
+    checkpoint_logger.info("[lifespan] loop watchdog started")
+
+    # Your original startup step: create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    # Shutdown: (optional) cleanup
+    checkpoint_logger.info("[lifespan] database tables ensured")
+
+    try:
+        yield
+    finally:
+        checkpoint_logger.info("[lifespan] shutting down loop watchdog...")
+        watchdog_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await watchdog_task
 
 
 app = FastAPI(
@@ -33,6 +79,23 @@ app = FastAPI(
 )
 
 # app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    """
+    Per-request total timing (in addition to in-route checkpoints).
+    """
+    t = CheckTimer(f"{request.method} {request.url.path}")
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        t.cp("response_sent")
+
+@app.on_event("startup")
+async def _start_watchdog():
+    loop = asyncio.get_running_loop()
+    loop.set_debug(True)  # optional: asyncio will log slow callbacks
+    loop.create_task(loop_watchdog(period_ms=20, warn_ms=100))
 
 templates = Jinja2Templates(directory="pages")
 
